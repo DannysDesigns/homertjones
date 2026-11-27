@@ -18,9 +18,11 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Jost:wght@400;500&amp;display=swap">
   <link rel="stylesheet" href="assets/css/styles.css">
   <script>
-    document.documentElement.classList.add("js");
+    document.documentElement.classList.add("js", "content-loading");
+    setTimeout(function () { document.documentElement.classList.remove("content-loading"); }, 1500);
     setTimeout(function () { if (!window.__htjReady) document.documentElement.classList.remove("js"); }, 2500);
   </script>
+  <script src="assets/js/site-config.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
 <body>
@@ -43,6 +45,7 @@
       <nav class="site-nav" id="site-nav" aria-label="Primary" data-nav>
         <ul>
           <li><a href="#collection">Collection</a></li>
+          <li data-gallery-link hidden><a href="#gallery">Gallery</a></li>
           <li><a href="#process">Process</a></li>
           <li><a href="#artist">The Artist</a></li>
           <li><a href="#faq">FAQ</a></li>
@@ -53,21 +56,21 @@
   </header>
 
   <main id="main">
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero" aria-labelledby="hero-title" data-edit-group="Top of the page">
       <div class="container hero__grid">
         <div class="hero__copy" data-reveal>
-          <p class="eyebrow">Hand-sketched &middot; Made to order</p>
-          <h1 id="hero-title">Simple lines.<br><em>Lasting keepsakes.</em></h1>
-          <!-- PLACEHOLDER BLURB: replace with Homer's own description. -->
-          <p class="hero__lede">Homer T. Jones turns the places, faces, and moments you love into elegant hand-drawn sketches, then sets them onto postcards, porcelain plates, and heirloom pieces made to be given and kept.</p>
+          <p class="eyebrow" data-edit="hero.eyebrow" data-edit-label="Small heading">Hand-sketched &middot; Made to order</p>
+          <h1 id="hero-title" data-edit="hero.title" data-edit-label="Headline">Simple lines.<br><em>Lasting keepsakes.</em></h1>
+          <!-- Default text. Homer can change any data-edit text from /Host. -->
+          <p class="hero__lede" data-edit="hero.lede" data-edit-label="Introduction">Homer T. Jones turns the places, faces, and moments you love into elegant hand-drawn sketches, then sets them onto postcards, porcelain plates, and heirloom pieces made to be given and kept.</p>
           <div class="hero__actions">
             <a class="btn" href="order.html">Begin a Commission <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
             <a class="link-arrow" href="#collection">View the Collection <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
           </div>
           <ul class="hero__marks" aria-label="Every commission includes">
-            <li>Drawn by hand</li>
-            <li>Proof before production</li>
-            <li>Personally quoted</li>
+            <li data-edit="hero.mark1" data-edit-label="Promise 1">Drawn by hand</li>
+            <li data-edit="hero.mark2" data-edit-label="Promise 2">Proof before production</li>
+            <li data-edit="hero.mark3" data-edit-label="Promise 3">Personally quoted</li>
           </ul>
         </div>
 
@@ -128,94 +131,94 @@
       </div>
     </section>
 
-    <section class="subjects" aria-label="Popular subjects">
+    <section class="subjects" aria-label="Popular subjects" data-edit-group="Subjects strip">
       <ul class="container">
-        <li>Homes &amp; cottages</li>
-        <li>Beloved pets</li>
-        <li>Wedding venues</li>
-        <li>Family landmarks</li>
-        <li>Storefronts</li>
-        <li>Chapels</li>
-        <li>Holiday scenes</li>
+        <li data-edit="subjects.1" data-edit-label="Subject 1">Homes &amp; cottages</li>
+        <li data-edit="subjects.2" data-edit-label="Subject 2">Beloved pets</li>
+        <li data-edit="subjects.3" data-edit-label="Subject 3">Wedding venues</li>
+        <li data-edit="subjects.4" data-edit-label="Subject 4">Family landmarks</li>
+        <li data-edit="subjects.5" data-edit-label="Subject 5">Storefronts</li>
+        <li data-edit="subjects.6" data-edit-label="Subject 6">Chapels</li>
+        <li data-edit="subjects.7" data-edit-label="Subject 7">Holiday scenes</li>
       </ul>
     </section>
 
-    <section class="section" id="collection" aria-labelledby="collection-title">
+    <section class="section" id="collection" aria-labelledby="collection-title" data-edit-group="The Collection">
       <div class="container">
         <div class="section-head" data-reveal>
-          <p class="eyebrow">The Collection</p>
-          <h2 id="collection-title">Drawn once, by hand. <em>Kept for a lifetime.</em></h2>
-          <p>Every piece begins as an original ink sketch drawn from your photograph, then is set onto a keepsake chosen to suit the moment.</p>
+          <p class="eyebrow" data-edit="collection.eyebrow" data-edit-label="Small heading">The Collection</p>
+          <h2 id="collection-title" data-edit="collection.title" data-edit-label="Heading">Drawn once, by hand. <em>Kept for a lifetime.</em></h2>
+          <p data-edit="collection.intro" data-edit-label="Introduction">Every piece begins as an original ink sketch drawn from your photograph, then is set onto a keepsake chosen to suit the moment.</p>
         </div>
 
         <div class="feature-grid">
           <article class="feature" data-reveal>
             <svg class="feature__art" aria-hidden="true"><use href="assets/img/icons.svg#postcard"></use></svg>
-            <p class="feature__kicker">Correspondence</p>
-            <h3>Postcards</h3>
-            <p>Your sketch printed on fine card stock: a personal touch for holiday greetings, save-the-dates, new-home announcements, or a set to keep for yourself.</p>
+            <p class="feature__kicker" data-edit="postcards.kicker" data-edit-label="Postcards: small heading">Correspondence</p>
+            <h3 data-edit="postcards.title" data-edit-label="Postcards: title">Postcards</h3>
+            <p data-edit="postcards.text" data-edit-label="Postcards: description">Your sketch printed on fine card stock: a personal touch for holiday greetings, save-the-dates, new-home announcements, or a set to keep for yourself.</p>
             <ul class="feature__uses">
-              <li>Holiday greetings</li>
-              <li>Save-the-dates</li>
-              <li>Announcements</li>
+              <li data-edit="postcards.use1" data-edit-label="Postcards: use 1">Holiday greetings</li>
+              <li data-edit="postcards.use2" data-edit-label="Postcards: use 2">Save-the-dates</li>
+              <li data-edit="postcards.use3" data-edit-label="Postcards: use 3">Announcements</li>
             </ul>
             <a class="link-arrow" href="order.html?item=postcards">Request postcards <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
           </article>
 
           <article class="feature" data-reveal style="--delay: .12s">
             <svg class="feature__art" aria-hidden="true"><use href="assets/img/icons.svg#plate"></use></svg>
-            <p class="feature__kicker">Heirloom porcelain</p>
-            <h3>Plates</h3>
-            <p>Your sketch set onto a porcelain plate, a commemorative piece for weddings, anniversaries, and first homes, made to be displayed and passed down.</p>
+            <p class="feature__kicker" data-edit="plates.kicker" data-edit-label="Plates: small heading">Heirloom porcelain</p>
+            <h3 data-edit="plates.title" data-edit-label="Plates: title">Plates</h3>
+            <p data-edit="plates.text" data-edit-label="Plates: description">Your sketch set onto a porcelain plate, a commemorative piece for weddings, anniversaries, and first homes, made to be displayed and passed down.</p>
             <ul class="feature__uses">
-              <li>Weddings</li>
-              <li>Anniversaries</li>
-              <li>Housewarmings</li>
+              <li data-edit="plates.use1" data-edit-label="Plates: use 1">Weddings</li>
+              <li data-edit="plates.use2" data-edit-label="Plates: use 2">Anniversaries</li>
+              <li data-edit="plates.use3" data-edit-label="Plates: use 3">Housewarmings</li>
             </ul>
             <a class="link-arrow" href="order.html?item=plate">Request a plate <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
           </article>
         </div>
 
-        <div class="more" data-reveal>
+        <div class="more" data-reveal data-edit-group="More pieces">
           <div class="more__head">
-            <h3>And beyond</h3>
-            <p>If it can hold a simple line drawing, it can likely hold yours.</p>
+            <h3 data-edit="more.title" data-edit-label="Heading">And beyond</h3>
+            <p data-edit="more.intro" data-edit-label="Introduction">If it can hold a simple line drawing, it can likely hold yours.</p>
           </div>
           <ul class="more-grid">
             <li>
               <a class="more-item" href="order.html?item=notecards">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#notecard"></use></svg>
-                <div><h4>Notecards</h4><p>Folded cards for thank-you notes, invitations, and stationery sets.</p></div>
+                <div><h4 data-edit="more.notecards.title" data-edit-label="Notecards: title">Notecards</h4><p data-edit="more.notecards.text" data-edit-label="Notecards: description">Folded cards for thank-you notes, invitations, and stationery sets.</p></div>
               </a>
             </li>
             <li>
               <a class="more-item" href="order.html?item=ornament">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#ornament"></use></svg>
-                <div><h4>Ornaments</h4><p>A first-home or first-Christmas keepsake for the tree.</p></div>
+                <div><h4 data-edit="more.ornaments.title" data-edit-label="Ornaments: title">Ornaments</h4><p data-edit="more.ornaments.text" data-edit-label="Ornaments: description">A first-home or first-Christmas keepsake for the tree.</p></div>
               </a>
             </li>
             <li>
               <a class="more-item" href="order.html?item=mug">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#mug"></use></svg>
-                <div><h4>Mugs</h4><p>A favorite place, made part of the morning ritual.</p></div>
+                <div><h4 data-edit="more.mugs.title" data-edit-label="Mugs: title">Mugs</h4><p data-edit="more.mugs.text" data-edit-label="Mugs: description">A favorite place, made part of the morning ritual.</p></div>
               </a>
             </li>
             <li>
               <a class="more-item" href="order.html?item=coasters">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#coaster"></use></svg>
-                <div><h4>Coasters</h4><p>Sets for the home, the lake house, or the family business.</p></div>
+                <div><h4 data-edit="more.coasters.title" data-edit-label="Coasters: title">Coasters</h4><p data-edit="more.coasters.text" data-edit-label="Coasters: description">Sets for the home, the lake house, or the family business.</p></div>
               </a>
             </li>
             <li>
               <a class="more-item" href="order.html?item=tote">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#tote"></use></svg>
-                <div><h4>Tote bags</h4><p>Clean line art on sturdy canvas, made to be carried.</p></div>
+                <div><h4 data-edit="more.totes.title" data-edit-label="Tote bags: title">Tote bags</h4><p data-edit="more.totes.text" data-edit-label="Tote bags: description">Clean line art on sturdy canvas, made to be carried.</p></div>
               </a>
             </li>
             <li>
               <a class="more-item" href="order.html?item=print">
                 <svg aria-hidden="true"><use href="assets/img/icons.svg#frame"></use></svg>
-                <div><h4>Framed prints</h4><p>Your sketch, matted and framed for the wall.</p></div>
+                <div><h4 data-edit="more.prints.title" data-edit-label="Framed prints: title">Framed prints</h4><p data-edit="more.prints.text" data-edit-label="Framed prints: description">Your sketch, matted and framed for the wall.</p></div>
               </a>
             </li>
           </ul>
@@ -224,39 +227,75 @@
       </div>
     </section>
 
-    <section class="section section--tint" id="process" aria-labelledby="process-title">
+    <section class="section gallery" id="gallery" aria-labelledby="gallery-title" data-edit-group="Gallery" data-gallery hidden>
       <div class="container">
         <div class="section-head section-head--center" data-reveal>
-          <p class="eyebrow eyebrow--center">The Process</p>
-          <h2 id="process-title">A personal, <em>unhurried</em> process</h2>
-          <p>Every commission is handled one at a time, from the first conversation to the finished piece.</p>
+          <p class="eyebrow eyebrow--center" data-edit="gallery.eyebrow" data-edit-label="Small heading">The Gallery</p>
+          <h2 id="gallery-title" data-edit="gallery.title" data-edit-label="Heading">Recent <em>commissions</em></h2>
+          <p data-edit="gallery.intro" data-edit-label="Introduction">A selection of pieces drawn by hand for clients, family, and friends.</p>
+        </div>
+        <ul class="gallery-grid" data-gallery-grid></ul>
+        <div class="gallery__more" data-gallery-more hidden>
+          <button class="btn btn--ghost" type="button" data-gallery-toggle aria-expanded="false">View all</button>
+        </div>
+      </div>
+      <dialog class="lightbox" data-lightbox aria-label="Gallery image viewer">
+        <div class="lightbox__frame">
+          <button class="lightbox__close" type="button" data-lightbox-close aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+          </button>
+          <button class="lightbox__nav lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8"/></svg>
+          </button>
+          <figure class="lightbox__figure">
+            <div class="lightbox__stage"><img data-lightbox-img alt=""></div>
+            <figcaption>
+              <span class="lightbox__count" data-lightbox-count></span>
+              <span class="lightbox__title" data-lightbox-title></span>
+              <span class="lightbox__caption" data-lightbox-caption></span>
+              <a class="link-arrow" href="order.html">Commission a piece <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
+            </figcaption>
+          </figure>
+          <button class="lightbox__nav lightbox__nav--next" type="button" data-lightbox-next aria-label="Next image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg>
+          </button>
+        </div>
+      </dialog>
+    </section>
+
+    <section class="section section--tint" id="process" aria-labelledby="process-title" data-edit-group="The Process">
+      <div class="container">
+        <div class="section-head section-head--center" data-reveal>
+          <p class="eyebrow eyebrow--center" data-edit="process.eyebrow" data-edit-label="Small heading">The Process</p>
+          <h2 id="process-title" data-edit="process.title" data-edit-label="Heading">A personal, <em>unhurried</em> process</h2>
+          <p data-edit="process.intro" data-edit-label="Introduction">Every commission is handled one at a time, from the first conversation to the finished piece.</p>
         </div>
         <ol class="steps">
           <li class="step" data-reveal>
             <span class="step__num" aria-hidden="true">I.</span>
-            <h3>Share your vision</h3>
-            <p>Choose your piece, tell us what it means to you, and attach a favorite photograph.</p>
+            <h3 data-edit="process.step1.title" data-edit-label="Step I: title">Share your vision</h3>
+            <p data-edit="process.step1.text" data-edit-label="Step I: description">Choose your piece, tell us what it means to you, and attach a favorite photograph.</p>
           </li>
           <li class="step" data-reveal style="--delay: .1s">
             <span class="step__num" aria-hidden="true">II.</span>
-            <h3>Receive your quote</h3>
-            <p>Each request is reviewed personally and answered with a tailored quote and timeline.</p>
+            <h3 data-edit="process.step2.title" data-edit-label="Step II: title">Receive your quote</h3>
+            <p data-edit="process.step2.text" data-edit-label="Step II: description">Each request is reviewed personally and answered with a tailored quote and timeline.</p>
           </li>
           <li class="step" data-reveal style="--delay: .2s">
             <span class="step__num" aria-hidden="true">III.</span>
-            <h3>Approve the sketch</h3>
-            <p>Your sketch is drawn by hand. You review a proof and request refinements before anything is made.</p>
+            <h3 data-edit="process.step3.title" data-edit-label="Step III: title">Approve the sketch</h3>
+            <p data-edit="process.step3.text" data-edit-label="Step III: description">Your sketch is drawn by hand. You review a proof and request refinements before anything is made.</p>
           </li>
           <li class="step" data-reveal style="--delay: .3s">
             <span class="step__num" aria-hidden="true">IV.</span>
-            <h3>Treasure it</h3>
-            <p>Your finished keepsake is carefully produced, wrapped, and sent on its way.</p>
+            <h3 data-edit="process.step4.title" data-edit-label="Step IV: title">Treasure it</h3>
+            <p data-edit="process.step4.text" data-edit-label="Step IV: description">Your finished keepsake is carefully produced, wrapped, and sent on its way.</p>
           </li>
         </ol>
       </div>
     </section>
 
-    <section class="section" id="artist" aria-labelledby="artist-title">
+    <section class="section" id="artist" aria-labelledby="artist-title" data-edit-group="The Artist">
       <div class="container artist">
         <figure class="portrait" data-reveal>
           <svg class="sketch" viewBox="0 0 200 270" aria-hidden="true">
@@ -267,67 +306,66 @@
             <path class="faint" d="M82 82c8-10 28-10 36 0M88 98c6-6 18-6 24 0"/>
             <path class="draw" pathLength="1" style="--d:.5s" d="M100 216C102 232 86 240 72 238C54 235 50 250 66 254C92 260 130 242 156 250"/>
           </svg>
-          <figcaption>Ink, paper &amp; patience</figcaption>
+          <figcaption data-edit="artist.caption" data-edit-label="Caption under the drawing">Ink, paper &amp; patience</figcaption>
         </figure>
 
         <div class="artist__body" data-reveal style="--delay: .12s">
-          <p class="eyebrow">The Artist</p>
-          <h2 id="artist-title">About Homer T. Jones</h2>
-          <!-- PLACEHOLDER BLURB: replace these paragraphs, the quote, and the signature with Homer's own description. -->
-          <p class="lead">Homer T. Jones believes the most meaningful drawings are often the simplest. With a steady hand and a few confident lines, Homer captures the places and faces that matter most: the front porch of a first home, a faithful companion, the chapel where two lives became one.</p>
-          <p>Every commission is drawn by hand, then thoughtfully set onto postcards, porcelain plates, and keepsakes designed to be given, displayed, and treasured for years to come.</p>
-          <blockquote>&ldquo;A good sketch doesn&rsquo;t record every detail. It remembers the feeling.&rdquo;</blockquote>
-          <p class="signature">Homer T. Jones</p>
+          <p class="eyebrow" data-edit="artist.eyebrow" data-edit-label="Small heading">The Artist</p>
+          <h2 id="artist-title" data-edit="artist.title" data-edit-label="Heading">About Homer T. Jones</h2>
+          <p class="lead" data-edit="artist.lead" data-edit-label="First paragraph">Homer T. Jones believes the most meaningful drawings are often the simplest. With a steady hand and a few confident lines, Homer captures the places and faces that matter most: the front porch of a first home, a faithful companion, the chapel where two lives became one.</p>
+          <p data-edit="artist.text" data-edit-label="Second paragraph">Every commission is drawn by hand, then thoughtfully set onto postcards, porcelain plates, and keepsakes designed to be given, displayed, and treasured for years to come.</p>
+          <blockquote data-edit="artist.quote" data-edit-label="Quote">&ldquo;A good sketch doesn&rsquo;t record every detail. It remembers the feeling.&rdquo;</blockquote>
+          <p class="signature" data-edit="artist.signature" data-edit-label="Signature">Homer T. Jones</p>
         </div>
       </div>
     </section>
 
-    <section class="section section--tint" id="faq" aria-labelledby="faq-title">
+    <section class="section section--tint" id="faq" aria-labelledby="faq-title" data-edit-group="Questions">
       <div class="container">
         <div class="section-head section-head--center" data-reveal>
-          <p class="eyebrow eyebrow--center">Questions</p>
-          <h2 id="faq-title">Before you <em>commission</em></h2>
+          <p class="eyebrow eyebrow--center" data-edit="faq.eyebrow" data-edit-label="Small heading">Questions</p>
+          <h2 id="faq-title" data-edit="faq.title" data-edit-label="Heading">Before you <em>commission</em></h2>
         </div>
         <div class="faq" data-reveal>
           <details>
-            <summary>What should I send as a reference?</summary>
-            <p>A clear, well-lit photograph is ideal. Straight-on photos work beautifully for homes and buildings; for pets and people, a photo taken at eye level in natural light captures the most character. Attach one photo with your request, and we&rsquo;ll follow up by email if more would help.</p>
+            <summary data-edit="faq.q1" data-edit-label="Question 1">What should I send as a reference?</summary>
+            <p data-edit="faq.a1" data-edit-label="Answer 1">A clear, well-lit photograph is ideal. Straight-on photos work beautifully for homes and buildings; for pets and people, a photo taken at eye level in natural light captures the most character. Attach one photo with your request, and we&rsquo;ll follow up by email if more would help.</p>
           </details>
           <details>
-            <summary>How much does a commission cost?</summary>
-            <p>Every piece is quoted individually based on the item, quantity, and detail of the sketch. You&rsquo;ll receive a personal quote after submitting your request. There&rsquo;s no obligation, and nothing is charged until you approve.</p>
+            <summary data-edit="faq.q2" data-edit-label="Question 2">How much does a commission cost?</summary>
+            <p data-edit="faq.a2" data-edit-label="Answer 2">Every piece is quoted individually based on the item, quantity, and detail of the sketch. You&rsquo;ll receive a personal quote after submitting your request. There&rsquo;s no obligation, and nothing is charged until you approve.</p>
           </details>
           <details>
-            <summary>How long will it take?</summary>
-            <p>Timing depends on the item and quantity, and your quote will include an estimated completion date. If you have an event or deadline, note it on your request and we&rsquo;ll let you know right away whether it&rsquo;s possible.</p>
+            <summary data-edit="faq.q3" data-edit-label="Question 3">How long will it take?</summary>
+            <p data-edit="faq.a3" data-edit-label="Answer 3">Timing depends on the item and quantity, and your quote will include an estimated completion date. If you have an event or deadline, note it on your request and we&rsquo;ll let you know right away whether it&rsquo;s possible.</p>
           </details>
           <details>
-            <summary>Will I see the sketch before it&rsquo;s produced?</summary>
-            <p>Yes. You&rsquo;ll receive a digital proof of your sketch to review, and small refinements are welcome before anything goes into production.</p>
+            <summary data-edit="faq.q4" data-edit-label="Question 4">Will I see the sketch before it&rsquo;s produced?</summary>
+            <p data-edit="faq.a4" data-edit-label="Answer 4">Yes. You&rsquo;ll receive a digital proof of your sketch to review, and small refinements are welcome before anything goes into production.</p>
           </details>
           <details>
-            <summary>Can you handle larger orders?</summary>
-            <p>Gladly. Postcards and notecards are well suited to weddings, events, closing gifts, and businesses. Include your quantity on the request and we&rsquo;ll tailor a quote.</p>
+            <summary data-edit="faq.q5" data-edit-label="Question 5">Can you handle larger orders?</summary>
+            <p data-edit="faq.a5" data-edit-label="Answer 5">Gladly. Postcards and notecards are well suited to weddings, events, closing gifts, and businesses. Include your quantity on the request and we&rsquo;ll tailor a quote.</p>
           </details>
           <details>
-            <summary>How do I pay?</summary>
-            <p>Once you approve your quote, you&rsquo;ll receive an invoice by email. Work begins as soon as it&rsquo;s settled.</p>
+            <summary data-edit="faq.q6" data-edit-label="Question 6">How do I pay?</summary>
+            <p data-edit="faq.a6" data-edit-label="Answer 6">Once you approve your quote, you&rsquo;ll receive an invoice by email. Work begins as soon as it&rsquo;s settled.</p>
           </details>
         </div>
       </div>
     </section>
 
-    <section class="cta" aria-labelledby="cta-title">
+    <section class="cta" aria-labelledby="cta-title" data-edit-group="Closing banner">
       <div class="container" data-reveal>
-        <p class="eyebrow eyebrow--center">Commissions open</p>
-        <h2 id="cta-title">Every keepsake begins with a single line.</h2>
-        <p>Tell us about the place, person, or moment you&rsquo;d like to remember, and we&rsquo;ll take it from there.</p>
+        <p class="eyebrow eyebrow--center" data-edit="cta.eyebrow" data-edit-label="Small heading">Commissions open</p>
+        <h2 id="cta-title" data-edit="cta.title" data-edit-label="Heading">Every keepsake begins with a single line.</h2>
+        <p data-edit="cta.text" data-edit-label="Text">Tell us about the place, person, or moment you&rsquo;d like to remember, and we&rsquo;ll take it from there.</p>
         <a class="btn btn--light" href="order.html">Begin a Commission <svg aria-hidden="true"><use href="assets/img/icons.svg#arrow"></use></svg></a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" data-edit-group="Footer">
     <div class="container">
       <div class="site-footer__grid">
         <div class="site-footer__brand">
@@ -338,12 +376,13 @@
               <span class="brand__tag">Hand-Sketched Keepsakes</span>
             </span>
           </a>
-          <p class="site-footer__about">Original hand-drawn sketches on postcards, porcelain plates, and keepsakes, made to order.</p>
+          <p class="site-footer__about" data-edit="footer.about" data-edit-label="About text">Original hand-drawn sketches on postcards, porcelain plates, and keepsakes, made to order.</p>
         </div>
         <div>
           <h2>Explore</h2>
           <ul>
             <li><a href="#collection">The Collection</a></li>
+            <li data-gallery-link hidden><a href="#gallery">The Gallery</a></li>
             <li><a href="#process">The Process</a></li>
             <li><a href="#artist">The Artist</a></li>
             <li><a href="#faq">Questions</a></li>
@@ -360,7 +399,7 @@
       </div>
       <div class="site-footer__base">
         <p>&copy; <span data-year>2026</span> Homer T. Jones. All rights reserved.</p>
-        <p>Every sketch drawn by hand.</p>
+        <p data-edit="footer.tagline" data-edit-label="Bottom line">Every sketch drawn by hand.</p>
       </div>
     </div>
   </footer>

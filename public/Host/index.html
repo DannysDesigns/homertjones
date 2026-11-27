@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://whueerfuwpdmnfbnsrpe.supabase.co; connect-src 'self' https://whueerfuwpdmnfbnsrpe.supabase.co wss://whueerfuwpdmnfbnsrpe.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="same-origin">
+  <title>Host · Homer T. Jones</title>
+  <meta name="description" content="Private studio for managing the Homer T. Jones gallery and homepage.">
+  <meta name="theme-color" content="#f6f1e7">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Jost:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/Host/host.css">
+  <script src="/Host/vendor/supabase.js" defer></script>
+  <script src="/Host/vendor/Sortable.min.js" defer></script>
+  <script src="/assets/js/site-config.js" defer></script>
+  <script src="/Host/host.js" defer></script>
+</head>
+<body class="host">
+  <header class="host-header">
+    <div class="container host-header__inner">
+      <a class="brand" href="/" aria-label="Homer T. Jones, view the website">
+        <svg class="brand__mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22.5"/><circle cx="24" cy="24" r="19.5"/><text x="24" y="29" text-anchor="middle">HTJ</text></svg>
+        <span class="brand__text">
+          <span class="brand__name">Homer T. Jones</span>
+          <span class="brand__tag">Host Studio</span>
+        </span>
+      </a>
+      <div class="host-header__meta" data-signed-in hidden>
+        <span class="host-header__user" data-user-email></span>
+        <a class="btn btn--small btn--ghost" href="/" target="_blank" rel="noopener">View site</a>
+        <button class="btn btn--small" type="button" data-sign-out>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="host-main" id="main">
+    <div class="container">
+      <p class="host-loading" data-view="loading">Opening the studio&hellip;</p>
+
+      <noscript><p class="host-loading">The Host studio needs JavaScript turned on.</p></noscript>
+
+      <section class="host-auth" data-view="signin" aria-labelledby="signin-title" hidden>
+        <p class="eyebrow">Host</p>
+        <h1 id="signin-title">Welcome back</h1>
+        <p class="host-auth__lede">Sign in to manage your gallery and the words on your homepage.</p>
+        <form class="host-form" data-signin-form novalidate>
+          <div class="field">
+            <label class="label" for="signin-email">Email</label>
+            <input class="control" id="signin-email" name="email" type="email" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label class="label" for="signin-password">Password</label>
+            <input class="control" id="signin-password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <p class="host-error" role="alert" data-form-error></p>
+          <button class="btn" type="submit">Sign in</button>
+        </form>
+        <p class="hint host-auth__foot">Forgot your password? Ask your site administrator to reset it.</p>
+      </section>
+
+      <section class="host-auth" data-view="password" aria-labelledby="password-title" hidden>
+        <p class="eyebrow">First visit</p>
+        <h1 id="password-title">Choose your own password</h1>
+        <p class="host-auth__lede">You signed in with a temporary password. Pick a new one that only you know.</p>
+        <form class="host-form" data-password-form="first" novalidate>
+          <div class="field">
+            <label class="label" for="first-password">New password</label>
+            <input class="control" id="first-password" name="password" type="password" autocomplete="new-password" minlength="10" required aria-describedby="first-password-hint">
+            <p class="hint" id="first-password-hint">At least 10 characters. A short phrase is easy to remember.</p>
+          </div>
+          <div class="field">
+            <label class="label" for="first-password-confirm">Type it again</label>
+            <input class="control" id="first-password-confirm" name="confirm" type="password" autocomplete="new-password" minlength="10" required>
+          </div>
+          <p class="host-error" role="alert" data-form-error></p>
+          <button class="btn" type="submit">Save password</button>
+        </form>
+      </section>
+
+      <section class="host-auth" data-view="denied" aria-labelledby="denied-title" hidden>
+        <p class="eyebrow">Private</p>
+        <h1 id="denied-title">This account can&rsquo;t edit the site</h1>
+        <p class="host-auth__lede">You&rsquo;re signed in as <strong data-user-email></strong>, which isn&rsquo;t on the list of site hosts.</p>
+        <button class="btn" type="button" data-sign-out>Sign out</button>
+      </section>
+
+      <section class="host-dashboard" data-view="dashboard" hidden>
+        <div class="host-tabs" role="tablist" aria-label="Studio sections">
+          <button class="host-tab" type="button" role="tab" id="tab-gallery" aria-controls="panel-gallery" aria-selected="true" data-tab="gallery">Gallery</button>
+          <button class="host-tab" type="button" role="tab" id="tab-content" aria-controls="panel-content" aria-selected="false" tabindex="-1" data-tab="content">Main page</button>
+          <button class="host-tab" type="button" role="tab" id="tab-account" aria-controls="panel-account" aria-selected="false" tabindex="-1" data-tab="account">Account</button>
+        </div>
+
+        <div class="host-panel" role="tabpanel" id="panel-gallery" aria-labelledby="tab-gallery" data-panel="gallery">
+          <div class="host-panel__head">
+            <div>
+              <h1>Gallery</h1>
+              <p class="host-panel__lede">Drag the pictures, or use the arrows, to set their order. The order here is the order on the homepage.</p>
+            </div>
+            <div class="host-panel__actions">
+              <p class="host-count" data-gallery-count></p>
+              <button class="btn btn--small btn--ghost" type="button" data-download-all disabled>Download all</button>
+            </div>
+          </div>
+
+          <div class="dropzone host-drop" data-upload-drop>
+            <svg class="dropzone__icon" aria-hidden="true"><use href="/assets/img/icons.svg#photo"></use></svg>
+            <div>
+              <span class="dropzone__title">Add photos: choose them or drop them here</span>
+              <span class="dropzone__meta" id="upload-hint">JPG, PNG, WebP, or HEIC. Choose several at once. New photos go to the front.</span>
+            </div>
+            <input type="file" accept="image/*,.heic,.heif" multiple aria-label="Add photos to the gallery" aria-describedby="upload-hint" data-upload-input>
+          </div>
+
+          <ul class="host-uploads" data-upload-list aria-live="polite"></ul>
+
+          <div class="host-empty" data-gallery-empty hidden>
+            <p class="host-empty__title">Your gallery is empty</p>
+            <p>The Gallery section appears on the homepage as soon as you add your first photo.</p>
+          </div>
+
+          <ol class="host-grid" data-gallery-grid aria-label="Gallery images in display order"></ol>
+          <p class="host-order-status" role="status" data-order-status></p>
+        </div>
+
+        <div class="host-panel" role="tabpanel" id="panel-content" aria-labelledby="tab-content" data-panel="content" hidden>
+          <div class="host-panel__head">
+            <div>
+              <h1>Main page</h1>
+              <p class="host-panel__lede">Change any words on the homepage. Put <code>*asterisks*</code> around words to show them in gold italics, and press Enter for a new line. Empty a box to hide that line.</p>
+            </div>
+            <div class="host-panel__actions">
+              <a class="btn btn--small btn--ghost" href="/" target="_blank" rel="noopener">Open homepage</a>
+            </div>
+          </div>
+          <p class="host-loading host-loading--inline" data-content-loading>Loading your homepage text&hellip;</p>
+          <form class="host-content" data-content-form novalidate></form>
+          <div class="host-savebar" data-savebar hidden>
+            <p class="host-savebar__status" role="status" data-save-status>You have unsaved changes.</p>
+            <div class="host-savebar__actions">
+              <button class="btn btn--small btn--ghost" type="button" data-content-discard>Discard</button>
+              <button class="btn btn--small" type="button" data-content-save>Save changes</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="host-panel" role="tabpanel" id="panel-account" aria-labelledby="tab-account" data-panel="account" hidden>
+          <div class="host-panel__head">
+            <div>
+              <h1>Account</h1>
+              <p class="host-panel__lede">Signed in as <strong data-user-email></strong>.</p>
+            </div>
+          </div>
+          <form class="host-form host-form--card" data-password-form="change" novalidate>
+            <h2>Change password</h2>
+            <div class="field">
+              <label class="label" for="change-password">New password</label>
+              <input class="control" id="change-password" name="password" type="password" autocomplete="new-password" minlength="10" required aria-describedby="change-password-hint">
+              <p class="hint" id="change-password-hint">At least 10 characters.</p>
+            </div>
+            <div class="field">
+              <label class="label" for="change-password-confirm">Type it again</label>
+              <input class="control" id="change-password-confirm" name="confirm" type="password" autocomplete="new-password" minlength="10" required>
+            </div>
+            <p class="host-error" role="alert" data-form-error></p>
+            <button class="btn btn--small" type="submit">Update password</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <template data-item-template>
+    <li class="host-item">
+      <div class="host-item__media">
+        <img alt="" loading="lazy" decoding="async" data-item-img>
+        <span class="host-item__pos" data-item-pos></span>
+        <span class="host-item__grip" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg>
+        </span>
+      </div>
+      <div class="host-item__body">
+        <p class="host-item__title" data-item-title></p>
+        <p class="host-item__meta" data-item-meta></p>
+      </div>
+      <div class="host-item__actions">
+        <div class="host-item__group">
+          <button class="icon-btn" type="button" data-action="earlier" title="Move earlier">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            <span class="sr-only">Move earlier</span>
+          </button>
+          <button class="icon-btn" type="button" data-action="later" title="Move later">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            <span class="sr-only">Move later</span>
+          </button>
+        </div>
+        <div class="host-item__group">
+          <button class="text-btn" type="button" data-action="edit">Edit</button>
+          <button class="icon-btn" type="button" data-action="download" title="Download original">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            <span class="sr-only">Download original</span>
+          </button>
+          <button class="icon-btn icon-btn--danger" type="button" data-action="delete" title="Delete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/></svg>
+            <span class="sr-only">Delete</span>
+          </button>
+        </div>
+      </div>
+    </li>
+  </template>
+
+  <dialog class="host-dialog" data-edit-dialog aria-labelledby="edit-title">
+    <form class="host-dialog__form" method="dialog" data-edit-form>
+      <h2 id="edit-title">Image details</h2>
+      <img class="host-dialog__preview" alt="" data-edit-preview>
+      <div class="field">
+        <label class="label" for="edit-image-title">Title <span class="opt">optional</span></label>
+        <input class="control" id="edit-image-title" name="title" type="text" maxlength="160" autocomplete="off" placeholder="e.g. The Hendersons&rsquo; lake house">
+      </div>
+      <div class="field">
+        <label class="label" for="edit-image-caption">Caption <span class="opt">optional</span></label>
+        <textarea class="control" id="edit-image-caption" name="caption" maxlength="1000" rows="3" placeholder="Shown under the picture when a visitor opens it."></textarea>
+      </div>
+      <p class="host-error" role="alert" data-form-error></p>
+      <div class="host-dialog__actions">
+        <button class="btn btn--small btn--ghost" type="button" data-dialog-cancel>Cancel</button>
+        <button class="btn btn--small" type="submit" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="host-dialog host-dialog--confirm" data-confirm-dialog aria-labelledby="confirm-title">
+    <form class="host-dialog__form" method="dialog">
+      <h2 id="confirm-title" data-confirm-title>Delete this image?</h2>
+      <p data-confirm-text>It will be removed from the website and its files deleted. This can&rsquo;t be undone.</p>
+      <div class="host-dialog__actions">
+        <button class="btn btn--small btn--ghost" type="submit" value="cancel">Cancel</button>
+        <button class="btn btn--small btn--danger" type="submit" value="confirm" data-confirm-ok>Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="host-toast" role="status" aria-live="polite" data-toast hidden></div>
+</body>
+</html>

@@ -10,7 +10,9 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent / "public"
 FORM_ENDPOINT = "https://formsubmit.co/"
-REQUIRED_PAGES = ["index.html", "order.html", "thank-you.html", "404.html"]
+REQUIRED_PAGES = ["index.html", "order.html", "thank-you.html", "404.html", "Host/index.html"]
+EDIT_KEY = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,79}$")
+EDIT_ALLOWED_TAGS = {"em", "br"}
 
 
 class PageParser(HTMLParser):
@@ -22,6 +24,11 @@ class PageParser(HTMLParser):
         self.lang = None
         self.title = ""
         self._in_title = False
+        self.edit_keys: list[str] = []
+        self.edit_problems: list[str] = []
+        self._stack: list[str] = []
+        self._edit_depth: int | None = None
+        self._edit_key = ""
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key: value or "" for key, value in attrs}
@@ -36,13 +43,36 @@ class PageParser(HTMLParser):
             if key in values:
                 self.refs.append(values[key])
 
+        if self._edit_depth is not None and tag not in EDIT_ALLOWED_TAGS:
+            self.edit_problems.append(f"data-edit=\"{self._edit_key}\" contains <{tag}>; only text, <em>, and <br> are editable")
+        if "data-edit" in values:
+            if self._edit_depth is not None:
+                self.edit_problems.append(f"data-edit=\"{values['data-edit']}\" is nested inside data-edit=\"{self._edit_key}\"")
+            self.edit_keys.append(values["data-edit"])
+            if tag not in VOID_TAGS:
+                self._edit_depth = len(self._stack)
+                self._edit_key = values["data-edit"]
+        if tag not in VOID_TAGS:
+            self._stack.append(tag)
+
     def handle_endtag(self, tag: str) -> None:
         if tag == "title":
             self._in_title = False
+        if tag in VOID_TAGS or tag not in self._stack:
+            return
+        while self._stack:
+            open_tag = self._stack.pop()
+            if self._edit_depth is not None and len(self._stack) <= self._edit_depth:
+                self._edit_depth = None
+            if open_tag == tag:
+                break
 
     def handle_data(self, data: str) -> None:
         if self._in_title:
             self.title += data
+
+
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 
 def parse(path: Path) -> PageParser:
@@ -64,8 +94,8 @@ def resolve(page: Path, ref: str) -> Path:
 
 def main() -> int:
     errors: list[str] = []
-    pages = sorted(ROOT.glob("*.html"))
-    parsed = {page.name: parse(page) for page in pages}
+    pages = sorted(ROOT.rglob("*.html"))
+    parsed = {page.relative_to(ROOT).as_posix(): parse(page) for page in pages}
 
     for required in REQUIRED_PAGES:
         if required not in parsed:
@@ -100,8 +130,26 @@ def main() -> int:
                     if parts.fragment not in sprite_ids:
                         errors.append(f"{name}: missing icon #{parts.fragment}")
                 elif target.suffix == ".html":
-                    if parts.fragment not in parsed[target.name].ids:
+                    target_key = target.resolve().relative_to(ROOT.resolve()).as_posix()
+                    if parts.fragment not in parsed[target_key].ids:
                         errors.append(f"{name}: {ref} points to a missing id")
+
+        seen: set[str] = set()
+        for key in page.edit_keys:
+            if not EDIT_KEY.match(key):
+                errors.append(f"{name}: data-edit key {key!r} is not a valid content key")
+            if key in seen:
+                errors.append(f"{name}: data-edit key {key!r} is used more than once")
+            seen.add(key)
+        errors.extend(f"{name}: {problem}" for problem in page.edit_problems)
+
+    home = parsed.get("index.html")
+    if home and not home.edit_keys:
+        errors.append("index.html: no data-edit fields found for the Host editor")
+
+    config = (ROOT / "assets/js/site-config.js").read_text(encoding="utf-8")
+    if re.search(r"service_role|sb_secret_", config):
+        errors.append("assets/js/site-config.js: contains a secret Supabase key")
 
     order = parsed.get("order.html")
     if order:
