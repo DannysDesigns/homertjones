@@ -44,18 +44,39 @@
   const MAX_ORIGINAL_BYTES = 50 * 1024 * 1024;
   const LARGE_EDGE = 2000;
   const THUMB_EDGE = 800;
-  const MAT_COLOR = "#fbf8f2";
+  const MAT_COLOR = "#fbf6ec";
+  const WATERMARK_TEXT = "\u00a9 Homer T. Jones";
+  const WATERMARK_SITE = "HOMERTJONES.COM";
+  const THEMES = {
+    clay: "Terracotta",
+    sage: "Sage",
+    harvest: "Harvest",
+    cranberry: "Cranberry",
+    pine: "Pine",
+    blush: "Rose",
+  };
+  // Every public page with editable text (data-edit). tests/validate_site.py checks this list.
+  const CONTENT_PAGES = [
+    { path: "/", name: "Home" },
+    { path: "/Gallery/", name: "Gallery" },
+    { path: "/About/", name: "Meet the Artist" },
+    { path: "/Contact/", name: "Contact" },
+  ];
+  const SHARED_PAGE = { path: "*", name: "Every page" };
 
   const state = {
     items: [],
+    collections: [],
     fields: [],
     saved: new Map(),
     contentLoaded: false,
     contentLoading: null,
+    contentPage: "/",
     uploads: 0,
     uploadQueue: Promise.resolve(),
     orderTimer: null,
     orderChain: Promise.resolve(),
+    collectionChain: Promise.resolve(),
     dashboardReady: false,
   };
 
@@ -296,12 +317,16 @@
 
   function resetState() {
     state.items = [];
+    state.collections = [];
     state.fields = [];
     state.saved = new Map();
     state.contentLoaded = false;
     state.contentLoading = null;
     $("[data-gallery-grid]").replaceChildren();
+    $("[data-collection-list]").replaceChildren();
     $("[data-content-form]").replaceChildren();
+    $("[data-content-pages]").replaceChildren();
+    $("[data-content-pages]").hidden = true;
     $("[data-savebar]").hidden = true;
     setUserEmail("");
   }
@@ -325,6 +350,7 @@
     if (!state.dashboardReady) {
       state.dashboardReady = true;
       initGallery();
+      initCollections();
     }
     selectTab(tabFromHash() || currentTab() || "gallery", false);
     loadGallery();
@@ -429,17 +455,47 @@
 
   async function loadGallery() {
     try {
-      state.items = unwrap(
-        await sb
+      const [items, collections] = await Promise.all([
+        sb
           .from("gallery_images")
           .select("*")
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: false })
-      );
+          .then(unwrap),
+        sb
+          .from("gallery_collections")
+          .select("*, gallery_collection_images(image_id)")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true })
+          .then(unwrap),
+      ]);
+      state.items = items;
+      state.collections = collections.map(toCollection);
       renderGrid();
+      renderCollections();
     } catch (error) {
       toast(`The gallery couldn't be loaded. ${friendly(error)}`, "error");
     }
+  }
+
+  function toCollection(row) {
+    const { gallery_collection_images: links, ...rest } = row;
+    return { ...rest, imageIds: new Set((links || []).map((link) => link.image_id)) };
+  }
+
+  function collectionsFor(imageId) {
+    return state.collections.filter((c) => c.imageIds.has(imageId));
+  }
+
+  function swatchTag(c, className, tagName = "span") {
+    const tag = document.createElement(tagName);
+    tag.className = className;
+    tag.dataset.theme = c.theme;
+    const swatch = document.createElement("span");
+    swatch.className = "host-swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    tag.append(swatch, document.createTextNode(c.title));
+    return tag;
   }
 
   function buildItem(item) {
@@ -463,6 +519,17 @@
     meta.textContent = item.caption || "No caption";
     meta.classList.toggle("is-empty", !item.caption);
     $("[data-item-img]", li).alt = item.title || "Untitled gallery image";
+    const tags = $("[data-item-tags]", li);
+    const saved = collectionsFor(item.id);
+    tags.replaceChildren(...saved.map((c) => swatchTag(c, "host-tag")));
+    tags.hidden = saved.length === 0;
+  }
+
+  function refreshItemTags() {
+    Array.from(grid.children).forEach((li) => {
+      const item = state.items.find((entry) => entry.id === li.dataset.id);
+      if (item) updateItemText(li, item);
+    });
   }
 
   function renderGrid() {
@@ -480,7 +547,7 @@
     const count = state.items.length;
     $("[data-gallery-empty]").hidden = count > 0;
     $("[data-gallery-count]").textContent = count
-      ? `${count} ${count === 1 ? "image" : "images"} on the homepage`
+      ? `${count} ${count === 1 ? "image" : "images"} on the Gallery page`
       : "";
     downloadAllButton.disabled = count === 0;
   }
@@ -526,7 +593,7 @@
       state.items.forEach((item, index) => {
         item.sort_order = index + 1;
       });
-      setOrderStatus("Order saved. The homepage shows the same order.");
+      setOrderStatus("Order saved. The Gallery page shows the same order.");
     });
     return state.orderChain;
   }
@@ -658,14 +725,68 @@
     });
   }
 
+  let watermarkFonts = null;
+  function loadWatermarkFonts() {
+    if (!watermarkFonts) {
+      const loads =
+        document.fonts && typeof document.fonts.load === "function"
+          ? Promise.all([
+              document.fonts.load('italic 500 64px "Cormorant Garamond"'),
+              document.fonts.load('500 24px "Jost"'),
+            ])
+          : Promise.resolve();
+      const timeout = new Promise((resolve) => setTimeout(resolve, 4000));
+      watermarkFonts = Promise.race([loads, timeout]).catch(() => null);
+    }
+    return watermarkFonts;
+  }
+
+  // Burns a faint diagonal signature into the copies shown on the public site.
+  function watermark(canvas) {
+    const { width, height } = canvas;
+    const ctx = canvas.getContext("2d");
+    const diagonal = Math.hypot(width, height);
+    const serif = '"Cormorant Garamond", Georgia, "Times New Roman", serif';
+    const sans = 'Jost, "Helvetica Neue", Arial, sans-serif';
+
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(-Math.atan2(height, width));
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+
+    ctx.font = `italic 500 100px ${serif}`;
+    const fitted = (100 * diagonal * 0.72) / ctx.measureText(WATERMARK_TEXT).width;
+    const size = Math.max(12, Math.min(fitted, Math.min(width, height) * 0.34));
+    ctx.font = `italic 500 ${size}px ${serif}`;
+    ctx.lineWidth = Math.max(1, size * 0.05);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.fillStyle = "rgba(58, 42, 32, 0.17)";
+    ctx.strokeText(WATERMARK_TEXT, 0, 0);
+    ctx.fillText(WATERMARK_TEXT, 0, 0);
+
+    const small = Math.max(8, size * 0.2);
+    ctx.font = `500 ${small}px ${sans}`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${small * 0.35}px`;
+    ctx.lineWidth = Math.max(1, small * 0.12);
+    ctx.strokeText(WATERMARK_SITE, 0, size * 0.66);
+    ctx.fillText(WATERMARK_SITE, 0, size * 0.66);
+    ctx.restore();
+  }
+
   async function uploadOne(file, sortOrder, report) {
     if (file.size > MAX_ORIGINAL_BYTES) {
       throw new Error("This photo is larger than 50 MB. Please choose a smaller version.");
     }
     report("Preparing…");
+    const type = normalizedType(file);
+    const keepOriginal = ORIGINAL_TYPES.has(type);
+    const originalType = keepOriginal ? type : "image/jpeg";
     const decoded = await decodeImage(file);
     let large;
     let thumb;
+    let clean = null;
     let width;
     let height;
     try {
@@ -674,8 +795,13 @@
       const largeCanvas = drawScaled(img, img.naturalWidth, img.naturalHeight, LARGE_EDGE);
       width = largeCanvas.width;
       height = largeCanvas.height;
-      large = await toJpeg(largeCanvas, 0.88);
       const thumbCanvas = drawScaled(largeCanvas, width, height, THUMB_EDGE);
+      // Unusual formats are kept as an unmarked JPEG so downloads stay clean.
+      if (!keepOriginal) clean = await toJpeg(largeCanvas, 0.92);
+      await loadWatermarkFonts();
+      watermark(largeCanvas);
+      watermark(thumbCanvas);
+      large = await toJpeg(largeCanvas, 0.88);
       thumb = await toJpeg(thumbCanvas, 0.84);
       largeCanvas.width = largeCanvas.height = thumbCanvas.width = thumbCanvas.height = 0;
     } finally {
@@ -683,9 +809,6 @@
     }
 
     const id = uuid();
-    const type = normalizedType(file);
-    const keepOriginal = ORIGINAL_TYPES.has(type);
-    const originalType = keepOriginal ? type : "image/jpeg";
     const paths = {
       original: `${id}/original.${EXTENSIONS[originalType]}`,
       large: `${id}/large.jpg`,
@@ -694,7 +817,7 @@
 
     report("Uploading…");
     const uploads = [
-      [ORIGINALS_BUCKET, paths.original, keepOriginal ? file : large, originalType],
+      [ORIGINALS_BUCKET, paths.original, keepOriginal ? file : clean, originalType],
       [GALLERY_BUCKET, paths.large, large, "image/jpeg"],
       [GALLERY_BUCKET, paths.thumb, thumb, "image/jpeg"],
     ];
@@ -724,7 +847,7 @@
             original_path: paths.original,
             original_name: file.name.slice(0, 255),
             original_type: originalType,
-            original_size: keepOriginal ? file.size : large.size,
+            original_size: keepOriginal ? file.size : clean.size,
             width,
             height,
             sort_order: sortOrder,
@@ -763,6 +886,20 @@
     const preview = $("[data-edit-preview]", dialog);
     preview.src = publicUrl(item.thumb_path);
     preview.alt = item.title || "Selected gallery image";
+    $("[data-edit-collections]", dialog).replaceChildren(
+      ...state.collections.map((c) => {
+        const label = swatchTag(c, "host-check", "label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.name = "collections";
+        input.value = c.id;
+        input.checked = c.imageIds.has(item.id);
+        label.prepend(input);
+        if (!c.is_visible) label.append(" (hidden)");
+        return label;
+      })
+    );
+    $("[data-edit-collections-wrap]", dialog).hidden = state.collections.length === 0;
     dialog.showModal();
     field(form, "title").focus();
   }
@@ -773,6 +910,9 @@
     const form = event.currentTarget;
     const title = field(form, "title").value.trim();
     const caption = field(form, "caption").value.trim();
+    const chosen = $$('input[name="collections"]:checked', form).map((input) => input.value);
+    const before = collectionsFor(editing.id).map((c) => c.id);
+    const collectionsChanged = chosen.length !== before.length || chosen.some((id) => !before.includes(id));
     const button = $('[type="submit"]', form);
     setBusy(button, true, "Saving…");
     try {
@@ -780,8 +920,16 @@
         await sb.from("gallery_images").update({ title, caption }).eq("id", editing.id).select().single()
       );
       Object.assign(editing, updated);
+      if (collectionsChanged) {
+        unwrap(await sb.rpc("set_image_collections", { target_image: editing.id, collection_ids: chosen }));
+        state.collections.forEach((c) => {
+          if (chosen.includes(c.id)) c.imageIds.add(editing.id);
+          else c.imageIds.delete(editing.id);
+        });
+      }
       const li = grid.querySelector(`[data-id="${editing.id}"]`);
       if (li) updateItemText(li, editing);
+      renderCollections();
       $("[data-edit-dialog]").close();
       toast("Image details saved.");
     } catch (error) {
@@ -810,12 +958,326 @@
         [ORIGINALS_BUCKET, item.original_path],
       ]);
       state.items = state.items.filter((entry) => entry.id !== item.id);
+      state.collections.forEach((c) => c.imageIds.delete(item.id));
       const li = grid.querySelector(`[data-id="${item.id}"]`);
       if (li) li.remove();
       renumber();
+      renderCollections();
       toast("Image deleted.");
     } catch (error) {
       toast(`The image couldn't be deleted. ${friendly(error)}`, "error");
+    }
+  }
+
+  // ---------- Saved galleries ----------
+
+  const collectionList = $("[data-collection-list]");
+  const collectionTemplate = $("[data-collection-template]");
+  const collectionDialog = $("[data-collection-dialog]");
+  const collectionForm = $("[data-collection-form]");
+  const pickerDialog = $("[data-picker-dialog]");
+  const pickerForm = $("[data-picker-form]");
+  let editingCollection = null;
+  let pickingCollection = null;
+  let slugEdited = false;
+
+  function initCollections() {
+    $("[data-collection-new]").addEventListener("click", () => openCollection(null));
+
+    collectionList.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const li = button.closest("[data-id]");
+      const index = state.collections.findIndex((c) => c.id === li.dataset.id);
+      if (index < 0) return;
+      const c = state.collections[index];
+      const action = button.dataset.action;
+      if (action === "earlier") moveCollection(index, index - 1, action);
+      if (action === "later") moveCollection(index, index + 1, action);
+      if (action === "pick") openPicker(c);
+      if (action === "edit") openCollection(c);
+      if (action === "delete") deleteCollection(c);
+    });
+
+    const titleInput = field(collectionForm, "title");
+    const slugInput = field(collectionForm, "slug");
+    titleInput.addEventListener("input", () => {
+      if (!slugEdited) slugInput.value = slug(titleInput.value);
+    });
+    slugInput.addEventListener("input", () => {
+      slugEdited = slugInput.value !== "";
+    });
+    slugInput.addEventListener("change", () => {
+      slugInput.value = slug(slugInput.value);
+    });
+    collectionForm.addEventListener("submit", saveCollection);
+    $("[data-dialog-cancel]", collectionForm).addEventListener("click", () => collectionDialog.close());
+
+    pickerForm.addEventListener("submit", savePicker);
+    $("[data-dialog-cancel]", pickerForm).addEventListener("click", () => pickerDialog.close());
+    $("[data-picker-all]", pickerForm).addEventListener("click", () => setAllPicks(true));
+    $("[data-picker-none]", pickerForm).addEventListener("click", () => setAllPicks(false));
+    $("[data-picker-list]", pickerForm).addEventListener("change", updatePickerCount);
+  }
+
+  function collectionPictures(c) {
+    return state.items.filter((item) => c.imageIds.has(item.id));
+  }
+
+  function renderCollections() {
+    collectionList.replaceChildren(...state.collections.map(buildCollection));
+    renumberCollections();
+    refreshItemTags();
+  }
+
+  function buildCollection(c) {
+    const li = collectionTemplate.content.firstElementChild.cloneNode(true);
+    li.dataset.id = c.id;
+    li.dataset.theme = c.theme;
+    const pictures = collectionPictures(c);
+
+    const cover = $("[data-collection-cover]", li);
+    if (pictures.length) {
+      pictures.slice(0, 3).forEach((item) => {
+        const img = document.createElement("img");
+        img.src = publicUrl(item.thumb_path);
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
+        cover.append(img);
+      });
+    } else {
+      const placeholder = document.createElement("span");
+      placeholder.className = "host-collection__placeholder";
+      placeholder.textContent = "No pictures yet";
+      cover.append(placeholder);
+    }
+    cover.dataset.count = String(Math.min(3, pictures.length));
+
+    $("[data-collection-title]", li).textContent = c.title;
+    $("[data-collection-meta]", li).textContent = `${pictures.length} ${pictures.length === 1 ? "picture" : "pictures"} \u00b7 ${THEMES[c.theme] || c.theme} \u00b7 /Gallery/?g=${c.slug}`;
+    const text = $("[data-collection-text]", li);
+    text.textContent = c.description || "No description";
+    text.classList.toggle("is-empty", !c.description);
+    const note = $("[data-collection-note]", li);
+    note.textContent = !c.is_visible
+      ? "Hidden from the website"
+      : pictures.length
+        ? ""
+        : "Appears on the website once it has pictures";
+    note.hidden = !note.textContent;
+    $("[data-collection-view]", li).href = `/Gallery/?g=${encodeURIComponent(c.slug)}`;
+    return li;
+  }
+
+  function renumberCollections() {
+    const nodes = Array.from(collectionList.children);
+    nodes.forEach((li, index) => {
+      $('[data-action="earlier"]', li).disabled = index === 0;
+      $('[data-action="later"]', li).disabled = index === nodes.length - 1;
+    });
+    $("[data-collections-empty]").hidden = state.collections.length > 0;
+  }
+
+  function moveCollection(from, to, action) {
+    if (to < 0 || to >= state.collections.length) return;
+    const [moved] = state.collections.splice(from, 1);
+    state.collections.splice(to, 0, moved);
+    const node = collectionList.children[from];
+    const reference = to < from ? collectionList.children[to] : collectionList.children[to].nextSibling;
+    collectionList.insertBefore(node, reference);
+    renumberCollections();
+    const button = $(`[data-action="${action}"]`, node);
+    (button.disabled ? $('[data-action="pick"]', node) : button).focus();
+    node.classList.remove("is-moved");
+    void node.offsetWidth;
+    node.classList.add("is-moved");
+    saveCollectionOrder();
+  }
+
+  function saveCollectionOrder() {
+    const ids = state.collections.map((c) => c.id);
+    const status = $("[data-collection-status]");
+    status.textContent = "Saving the new order…";
+    state.collectionChain = state.collectionChain.then(async () => {
+      const { error } = await sb.rpc("reorder_gallery_collections", { ordered_ids: ids });
+      if (error) {
+        status.textContent = "";
+        toast(`The new order couldn't be saved. ${friendly(error)}`, "error");
+        return;
+      }
+      state.collections.forEach((c, index) => {
+        c.sort_order = index + 1;
+      });
+      status.textContent = "Order saved. The Gallery page shows the same order.";
+    });
+    return state.collectionChain;
+  }
+
+  function openCollection(c) {
+    editingCollection = c;
+    collectionForm.reset();
+    setFormError(collectionForm, "");
+    $("[data-collection-dialog-title]", collectionDialog).textContent = c ? "Edit saved gallery" : "New saved gallery";
+    field(collectionForm, "title").value = c ? c.title : "";
+    field(collectionForm, "description").value = c ? c.description : "";
+    field(collectionForm, "slug").value = c ? c.slug : "";
+    field(collectionForm, "is_visible").checked = c ? c.is_visible : true;
+    const theme = c ? c.theme : "clay";
+    $$('input[name="theme"]', collectionForm).forEach((input) => {
+      input.checked = input.value === theme;
+    });
+    // Existing galleries keep their web address when renamed, so shared links still work.
+    slugEdited = Boolean(c);
+    collectionDialog.showModal();
+    field(collectionForm, "title").focus();
+  }
+
+  async function saveCollection(event) {
+    event.preventDefault();
+    const form = collectionForm;
+    const title = field(form, "title").value.trim();
+    const slugValue = slug(field(form, "slug").value || title);
+    const themeInput = $('input[name="theme"]:checked', form);
+    if (!title) {
+      setFormError(form, "Please give the gallery a name.");
+      field(form, "title").focus();
+      return;
+    }
+    if (!slugValue) {
+      setFormError(form, "Please choose a web address with at least one letter or number.");
+      field(form, "slug").focus();
+      return;
+    }
+    field(form, "slug").value = slugValue;
+    const values = {
+      title,
+      description: field(form, "description").value.trim(),
+      slug: slugValue,
+      theme: themeInput ? themeInput.value : "clay",
+      is_visible: field(form, "is_visible").checked,
+    };
+
+    const button = $('[type="submit"]', form);
+    setBusy(button, true, "Saving…");
+    try {
+      if (editingCollection) {
+        const row = unwrap(
+          await sb.from("gallery_collections").update(values).eq("id", editingCollection.id).select().single()
+        );
+        Object.assign(editingCollection, row);
+        toast("Saved gallery updated.");
+      } else {
+        const sortOrder = state.collections.reduce((max, c) => Math.max(max, c.sort_order || 0), 0) + 1;
+        const row = unwrap(
+          await sb.from("gallery_collections").insert({ ...values, sort_order: sortOrder }).select().single()
+        );
+        state.collections.push({ ...row, imageIds: new Set() });
+        toast(`\u201c${title}\u201d created. Next, choose its pictures.`);
+      }
+      renderCollections();
+      collectionDialog.close();
+    } catch (error) {
+      setFormError(
+        form,
+        error && error.code === "23505"
+          ? "Another saved gallery already uses that web address. Please choose a different one."
+          : friendly(error)
+      );
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
+  async function deleteCollection(c) {
+    const confirmed = await confirmDialog({
+      title: "Delete this saved gallery?",
+      text: `\u201c${c.title}\u201d will be removed from the website. The pictures in it stay in your gallery.`,
+      ok: "Delete gallery",
+    });
+    if (!confirmed) return;
+    try {
+      const deleted = unwrap(await sb.from("gallery_collections").delete().eq("id", c.id).select("id"));
+      if (!deleted || !deleted.length) throw new Error("The saved gallery couldn't be deleted.");
+      state.collections = state.collections.filter((entry) => entry.id !== c.id);
+      renderCollections();
+      toast("Saved gallery deleted.");
+    } catch (error) {
+      toast(`The saved gallery couldn't be deleted. ${friendly(error)}`, "error");
+    }
+  }
+
+  function pickerInputs() {
+    return $$('[data-picker-list] input[type="checkbox"]', pickerForm);
+  }
+
+  function updatePickerCount() {
+    const chosen = pickerInputs().filter((input) => input.checked).length;
+    $("[data-picker-count]", pickerForm).textContent = `${chosen} of ${state.items.length} chosen`;
+  }
+
+  function setAllPicks(checked) {
+    pickerInputs().forEach((input) => {
+      input.checked = checked;
+    });
+    updatePickerCount();
+  }
+
+  function openPicker(c) {
+    pickingCollection = c;
+    setFormError(pickerForm, "");
+    $("[data-picker-name]", pickerForm).textContent = c.title;
+    $("[data-picker-list]", pickerForm).replaceChildren(
+      ...state.items.map((item, index) => {
+        const li = document.createElement("li");
+        const label = document.createElement("label");
+        label.className = "host-pick";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = item.id;
+        input.checked = c.imageIds.has(item.id);
+        const media = document.createElement("span");
+        media.className = "host-pick__media";
+        const img = document.createElement("img");
+        img.src = publicUrl(item.thumb_path);
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
+        media.append(img);
+        const name = document.createElement("span");
+        name.className = "host-pick__title";
+        name.textContent = item.title || `Picture ${index + 1}`;
+        label.append(input, media, name);
+        li.append(label);
+        return li;
+      })
+    );
+    const empty = state.items.length === 0;
+    $("[data-picker-empty]", pickerForm).hidden = !empty;
+    $("[data-picker-tools]", pickerForm).hidden = empty;
+    updatePickerCount();
+    pickerDialog.showModal();
+  }
+
+  async function savePicker(event) {
+    event.preventDefault();
+    const c = pickingCollection;
+    if (!c) return;
+    const ids = pickerInputs()
+      .filter((input) => input.checked)
+      .map((input) => input.value);
+    const button = $('[type="submit"]', pickerForm);
+    setBusy(button, true, "Saving…");
+    try {
+      unwrap(await sb.rpc("set_collection_images", { target_collection: c.id, image_ids: ids }));
+      c.imageIds = new Set(ids);
+      renderCollections();
+      pickerDialog.close();
+      toast(`\u201c${c.title}\u201d now has ${ids.length} ${ids.length === 1 ? "picture" : "pictures"}.`);
+    } catch (error) {
+      setFormError(pickerForm, friendly(error));
+    } finally {
+      setBusy(button, false);
     }
   }
 
@@ -982,10 +1444,12 @@
     return new Blob([...parts, ...central, end], { type: "application/zip" });
   }
 
-  // ---------- Main page text ----------
+  // ---------- Page text ----------
 
   const contentForm = $("[data-content-form]");
   const savebar = $("[data-savebar]");
+  const pageSwitcher = $("[data-content-pages]");
+  const openPageLink = $("[data-content-open]");
 
   function toEditable(el) {
     const walk = (node) => {
@@ -1014,33 +1478,50 @@
     if (state.contentLoading) return state.contentLoading;
     const loading = $("[data-content-loading]");
     loading.hidden = false;
-    loading.textContent = "Loading your homepage text…";
+    loading.textContent = "Loading your website text…";
 
     state.contentLoading = Promise.all([
-      fetch("/index.html", { cache: "no-store" }).then((response) => {
-        if (!response.ok) throw new Error("The homepage couldn't be read.");
-        return response.text();
-      }),
+      Promise.all(
+        CONTENT_PAGES.map((page) =>
+          fetch(page.path, { cache: "no-store" }).then((response) => {
+            if (!response.ok) throw new Error(`The ${page.name} page couldn't be read.`);
+            return response.text();
+          })
+        )
+      ),
       sb.from("site_content").select("key,value").then(unwrap),
     ])
-      .then(([html, rows]) => {
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        state.fields = $$("[data-edit]", doc).map((el) => {
-          const group = el.closest("[data-edit-group]");
-          return {
-            key: el.dataset.edit,
-            label: el.dataset.editLabel || el.dataset.edit,
-            group: group ? group.dataset.editGroup : "Other",
-            defaultValue: toEditable(el),
-          };
+      .then(([pages, rows]) => {
+        const byKey = new Map();
+        pages.forEach((html, index) => {
+          const page = CONTENT_PAGES[index];
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          $$("[data-edit]", doc).forEach((el) => {
+            const key = el.dataset.edit;
+            const known = byKey.get(key);
+            if (known) {
+              // The same key on several pages (like the footer) is edited once for all of them.
+              if (known.page !== page.path) known.page = SHARED_PAGE.path;
+              return;
+            }
+            const group = el.closest("[data-edit-group]");
+            byKey.set(key, {
+              key,
+              page: page.path,
+              label: el.dataset.editLabel || key,
+              group: group ? group.dataset.editGroup : "Other",
+              defaultValue: toEditable(el),
+            });
+          });
         });
+        state.fields = Array.from(byKey.values());
         state.saved = new Map(rows.map((row) => [row.key, row.value]));
         renderContentForm();
         state.contentLoaded = true;
         loading.hidden = true;
       })
       .catch((error) => {
-        loading.textContent = `Your homepage text couldn't be loaded. ${friendly(error)}`;
+        loading.textContent = `Your website text couldn't be loaded. ${friendly(error)}`;
       })
       .finally(() => {
         state.contentLoading = null;
@@ -1059,92 +1540,147 @@
     textarea.rows = Math.min(12, Math.max(1, wrapped));
   }
 
+  function contentPages() {
+    return [...CONTENT_PAGES, SHARED_PAGE].filter((page) => state.fields.some((f) => f.page === page.path));
+  }
+
   function renderContentForm() {
-    const groups = new Map();
-    state.fields.forEach((f) => {
-      if (!groups.has(f.group)) groups.set(f.group, []);
-      groups.get(f.group).push(f);
-    });
-
     const fragment = document.createDocumentFragment();
-    groups.forEach((fields, groupName) => {
-      const fieldset = document.createElement("fieldset");
-      fieldset.className = "host-group";
-      const legend = document.createElement("legend");
-      legend.textContent = groupName;
-      fieldset.append(legend);
+    contentPages().forEach((page) => {
+      const section = document.createElement("div");
+      section.className = "host-page";
+      section.dataset.page = page.path;
 
-      fields.forEach((f) => {
-        const id = `content-${f.key.replace(/[^a-z0-9]+/g, "-")}`;
-        const wrap = document.createElement("div");
-        wrap.className = "field host-field";
-        wrap.dataset.key = f.key;
-
-        const head = document.createElement("div");
-        head.className = "host-field__head";
-        const label = document.createElement("label");
-        label.className = "label";
-        label.htmlFor = id;
-        label.textContent = f.label;
-        const reset = document.createElement("button");
-        reset.type = "button";
-        reset.className = "text-btn";
-        reset.textContent = "Restore original";
-        reset.hidden = true;
-        head.append(label, reset);
-
-        const control = document.createElement("textarea");
-        control.className = "control";
-        control.id = id;
-        control.name = f.key;
-        control.maxLength = 4000;
-        control.spellcheck = true;
-        control.value = savedValue(f);
-        fitRows(control);
-
-        const note = document.createElement("p");
-        note.className = "hint host-field__note";
-        note.id = `${id}-note`;
-        control.setAttribute("aria-describedby", note.id);
-
-        const original = document.createElement("p");
-        original.className = "host-field__original";
-        original.hidden = true;
-        const originalLabel = document.createElement("span");
-        originalLabel.textContent = "Original: ";
-        const originalText = document.createElement("span");
-        originalText.textContent = f.defaultValue;
-        original.append(originalLabel, originalText);
-
-        control.addEventListener("input", () => {
-          fitRows(control);
-          refreshField(f);
-          refreshSavebar();
-        });
-        reset.addEventListener("click", () => {
-          control.value = f.defaultValue;
-          fitRows(control);
-          refreshField(f);
-          refreshSavebar();
-          control.focus();
+      const groups = new Map();
+      state.fields
+        .filter((f) => f.page === page.path)
+        .forEach((f) => {
+          if (!groups.has(f.group)) groups.set(f.group, []);
+          groups.get(f.group).push(f);
         });
 
-        wrap.append(head, control, note, original);
-        fieldset.append(wrap);
-        f.control = control;
-        f.wrap = wrap;
-        f.reset = reset;
-        f.note = note;
-        f.original = original;
-        refreshField(f);
+      groups.forEach((fields, groupName) => {
+        const fieldset = document.createElement("fieldset");
+        fieldset.className = "host-group";
+        const legend = document.createElement("legend");
+        legend.textContent = groupName;
+        fieldset.append(legend);
+
+        fields.forEach((f) => {
+          const id = `content-${f.key.replace(/[^a-z0-9]+/g, "-")}`;
+          const wrap = document.createElement("div");
+          wrap.className = "field host-field";
+          wrap.dataset.key = f.key;
+
+          const head = document.createElement("div");
+          head.className = "host-field__head";
+          const label = document.createElement("label");
+          label.className = "label";
+          label.htmlFor = id;
+          label.textContent = f.label;
+          const reset = document.createElement("button");
+          reset.type = "button";
+          reset.className = "text-btn";
+          reset.textContent = "Restore original";
+          reset.hidden = true;
+          head.append(label, reset);
+
+          const control = document.createElement("textarea");
+          control.className = "control";
+          control.id = id;
+          control.name = f.key;
+          control.maxLength = 4000;
+          control.spellcheck = true;
+          control.value = savedValue(f);
+          fitRows(control);
+
+          const note = document.createElement("p");
+          note.className = "hint host-field__note";
+          note.id = `${id}-note`;
+          control.setAttribute("aria-describedby", note.id);
+
+          const original = document.createElement("p");
+          original.className = "host-field__original";
+          original.hidden = true;
+          const originalLabel = document.createElement("span");
+          originalLabel.textContent = "Original: ";
+          const originalText = document.createElement("span");
+          originalText.textContent = f.defaultValue;
+          original.append(originalLabel, originalText);
+
+          control.addEventListener("input", () => {
+            fitRows(control);
+            refreshField(f);
+            refreshSavebar();
+          });
+          reset.addEventListener("click", () => {
+            control.value = f.defaultValue;
+            fitRows(control);
+            refreshField(f);
+            refreshSavebar();
+            control.focus();
+          });
+
+          wrap.append(head, control, note, original);
+          fieldset.append(wrap);
+          f.control = control;
+          f.wrap = wrap;
+          f.reset = reset;
+          f.note = note;
+          f.original = original;
+          refreshField(f);
+        });
+
+        section.append(fieldset);
       });
 
-      fragment.append(fieldset);
+      fragment.append(section);
     });
 
     contentForm.replaceChildren(fragment);
+    renderPageSwitcher();
+    showContentPage(state.contentPage);
     refreshSavebar();
   }
+
+  function renderPageSwitcher() {
+    pageSwitcher.replaceChildren(
+      ...contentPages().map((page) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "host-page-btn";
+        button.dataset.page = page.path;
+        const dot = document.createElement("span");
+        dot.className = "host-page-btn__dot";
+        dot.setAttribute("aria-hidden", "true");
+        const note = document.createElement("span");
+        note.className = "sr-only";
+        button.append(page.name, dot, note);
+        return button;
+      })
+    );
+    pageSwitcher.hidden = false;
+  }
+
+  function showContentPage(path, focus) {
+    const pages = contentPages();
+    const page = pages.find((entry) => entry.path === path) || pages[0];
+    if (!page) return;
+    state.contentPage = page.path;
+    $$(".host-page", contentForm).forEach((section) => {
+      section.hidden = section.dataset.page !== page.path;
+    });
+    $$("button[data-page]", pageSwitcher).forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.page === page.path));
+      if (focus && button.dataset.page === page.path) button.focus();
+    });
+    openPageLink.href = page.path === SHARED_PAGE.path ? "/" : page.path;
+  }
+
+  pageSwitcher.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-page]");
+    if (button) showContentPage(button.dataset.page);
+  });
 
   function refreshField(f) {
     const value = normalizeValue(f.control.value);
@@ -1154,15 +1690,24 @@
     f.wrap.classList.toggle("is-changed", changed);
     f.reset.hidden = !changed;
     f.original.hidden = !changed;
-    f.note.textContent = value === "" ? "Empty: this line is hidden on the homepage." : dirty ? "Not saved yet." : "";
+    f.note.textContent = value === "" ? "Empty: this line is hidden on the website." : dirty ? "Not saved yet." : "";
+  }
+
+  function isFieldDirty(f) {
+    return Boolean(f.control) && normalizeValue(f.control.value) !== savedValue(f);
   }
 
   function isContentDirty() {
-    return state.fields.some((f) => f.control && normalizeValue(f.control.value) !== savedValue(f));
+    return state.fields.some(isFieldDirty);
   }
 
   function refreshSavebar(message) {
-    const dirtyCount = state.fields.filter((f) => f.control && normalizeValue(f.control.value) !== savedValue(f)).length;
+    $$("button[data-page]", pageSwitcher).forEach((button) => {
+      const dirty = state.fields.some((f) => f.page === button.dataset.page && isFieldDirty(f));
+      button.classList.toggle("is-dirty", dirty);
+      $(".sr-only", button).textContent = dirty ? " (unsaved changes)" : "";
+    });
+    const dirtyCount = state.fields.filter(isFieldDirty).length;
     if (message) {
       $("[data-save-status]").textContent = message;
       savebar.hidden = false;
@@ -1206,8 +1751,8 @@
         refreshField(f);
       });
       setBusy(button, false);
-      toast("Saved. Your homepage is updated.");
-      refreshSavebar("Saved. Your homepage is updated.");
+      toast("Saved. The website is updated.");
+      refreshSavebar("Saved. The website is updated.");
       setTimeout(() => {
         if (!isContentDirty()) refreshSavebar();
       }, 2500);

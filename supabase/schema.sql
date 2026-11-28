@@ -1,4 +1,4 @@
--- Homer T. Jones: gallery, editable homepage text, and the /Host admin.
+-- Homer T. Jones: gallery, saved galleries, editable page text, and the /Host admin.
 -- Safe to run more than once (Supabase SQL editor or `supabase db query --linked -f supabase/schema.sql`).
 
 -- ---------------------------------------------------------------------------
@@ -125,8 +125,175 @@ revoke execute on function public.reorder_gallery_images(uuid[]) from public, an
 grant execute on function public.reorder_gallery_images(uuid[]) to authenticated;
 
 -- ---------------------------------------------------------------------------
--- Editable homepage text. Each key matches a data-edit="..." attribute in
--- public/index.html. A missing row means "use the text written in the HTML".
+-- Saved galleries (seasonal and holiday pages). Each one is shown at
+-- /Gallery/?g=<slug> once it has at least one picture. Pictures keep the
+-- overall gallery order inside every saved gallery.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.gallery_collections (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique
+    check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 60),
+  title text not null check (char_length(btrim(title)) between 1 and 80),
+  description text not null default '' check (char_length(description) <= 600),
+  theme text not null default 'clay'
+    check (theme in ('clay', 'sage', 'harvest', 'cranberry', 'pine', 'blush')),
+  is_visible boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists gallery_collections_sort_idx on public.gallery_collections (sort_order, created_at);
+
+drop trigger if exists gallery_collections_touch on public.gallery_collections;
+create trigger gallery_collections_touch before update on public.gallery_collections
+  for each row execute function public.touch_updated_at();
+
+alter table public.gallery_collections enable row level security;
+revoke all on public.gallery_collections from anon, authenticated;
+grant select on public.gallery_collections to anon, authenticated;
+grant insert, update, delete on public.gallery_collections to authenticated;
+
+drop policy if exists "Visitors can view shown galleries" on public.gallery_collections;
+create policy "Visitors can view shown galleries" on public.gallery_collections
+  for select to anon
+  using (is_visible);
+
+drop policy if exists "Signed-in users can view galleries" on public.gallery_collections;
+create policy "Signed-in users can view galleries" on public.gallery_collections
+  for select to authenticated
+  using (is_visible or (select public.is_site_admin()));
+
+drop policy if exists "Admins can add galleries" on public.gallery_collections;
+create policy "Admins can add galleries" on public.gallery_collections
+  for insert to authenticated
+  with check ((select public.is_site_admin()));
+
+drop policy if exists "Admins can edit galleries" on public.gallery_collections;
+create policy "Admins can edit galleries" on public.gallery_collections
+  for update to authenticated
+  using ((select public.is_site_admin()))
+  with check ((select public.is_site_admin()));
+
+drop policy if exists "Admins can delete galleries" on public.gallery_collections;
+create policy "Admins can delete galleries" on public.gallery_collections
+  for delete to authenticated
+  using ((select public.is_site_admin()));
+
+create table if not exists public.gallery_collection_images (
+  collection_id uuid not null references public.gallery_collections (id) on delete cascade,
+  image_id uuid not null references public.gallery_images (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (collection_id, image_id)
+);
+
+create index if not exists gallery_collection_images_image_idx on public.gallery_collection_images (image_id);
+
+alter table public.gallery_collection_images enable row level security;
+revoke all on public.gallery_collection_images from anon, authenticated;
+grant select on public.gallery_collection_images to anon, authenticated;
+grant insert, delete on public.gallery_collection_images to authenticated;
+
+drop policy if exists "Visitors can view shown gallery pictures" on public.gallery_collection_images;
+create policy "Visitors can view shown gallery pictures" on public.gallery_collection_images
+  for select to anon
+  using (exists (
+    select 1 from public.gallery_collections c where c.id = collection_id and c.is_visible
+  ));
+
+drop policy if exists "Signed-in users can view gallery pictures" on public.gallery_collection_images;
+create policy "Signed-in users can view gallery pictures" on public.gallery_collection_images
+  for select to authenticated
+  using ((select public.is_site_admin()) or exists (
+    select 1 from public.gallery_collections c where c.id = collection_id and c.is_visible
+  ));
+
+drop policy if exists "Admins can add gallery pictures" on public.gallery_collection_images;
+create policy "Admins can add gallery pictures" on public.gallery_collection_images
+  for insert to authenticated
+  with check ((select public.is_site_admin()));
+
+drop policy if exists "Admins can remove gallery pictures" on public.gallery_collection_images;
+create policy "Admins can remove gallery pictures" on public.gallery_collection_images
+  for delete to authenticated
+  using ((select public.is_site_admin()));
+
+create or replace function public.reorder_gallery_collections(ordered_ids uuid[])
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not public.is_site_admin() then
+    raise exception 'Only site admins can reorder galleries' using errcode = '42501';
+  end if;
+
+  update public.gallery_collections c
+     set sort_order = o.position
+    from unnest(ordered_ids) with ordinality as o (id, position)
+   where c.id = o.id
+     and c.sort_order is distinct from o.position::integer;
+end;
+$$;
+
+-- Replaces the pictures in one saved gallery.
+create or replace function public.set_collection_images(target_collection uuid, image_ids uuid[])
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not public.is_site_admin() then
+    raise exception 'Only site admins can change galleries' using errcode = '42501';
+  end if;
+
+  delete from public.gallery_collection_images
+   where collection_id = target_collection
+     and not (image_id = any (coalesce(image_ids, '{}')));
+
+  insert into public.gallery_collection_images (collection_id, image_id)
+  select target_collection, i
+    from unnest(coalesce(image_ids, '{}')) as i
+  on conflict do nothing;
+end;
+$$;
+
+-- Replaces the saved galleries one picture belongs to.
+create or replace function public.set_image_collections(target_image uuid, collection_ids uuid[])
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not public.is_site_admin() then
+    raise exception 'Only site admins can change galleries' using errcode = '42501';
+  end if;
+
+  delete from public.gallery_collection_images
+   where image_id = target_image
+     and not (collection_id = any (coalesce(collection_ids, '{}')));
+
+  insert into public.gallery_collection_images (collection_id, image_id)
+  select c, target_image
+    from unnest(coalesce(collection_ids, '{}')) as c
+  on conflict do nothing;
+end;
+$$;
+
+revoke execute on function public.reorder_gallery_collections(uuid[]) from public, anon;
+revoke execute on function public.set_collection_images(uuid, uuid[]) from public, anon;
+revoke execute on function public.set_image_collections(uuid, uuid[]) from public, anon;
+grant execute on function public.reorder_gallery_collections(uuid[]) to authenticated;
+grant execute on function public.set_collection_images(uuid, uuid[]) to authenticated;
+grant execute on function public.set_image_collections(uuid, uuid[]) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Editable page text. Each key matches a data-edit="..." attribute in the
+-- public pages. A missing row means "use the text written in the HTML".
 -- ---------------------------------------------------------------------------
 
 create table if not exists public.site_content (

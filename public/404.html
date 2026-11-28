@@ -6,14 +6,25 @@
   <title>Page Not Found · Homer T. Jones</title>
   <meta name="description" content="The page you were looking for could not be found.">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#f6f1e7">
+  <meta name="theme-color" content="#f5ede0">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Jost:wght@400;500&amp;display=swap">
   <link rel="stylesheet" href="/assets/css/styles.css">
   <script>
-    if (/^\/host(\/|\.html?)?$/i.test(location.pathname)) location.replace("/Host/" + location.hash);
+    (function () {
+      var path = location.pathname.replace(/\/index\.html?$/i, "").replace(/\/+$/, "").replace(/\.html?$/i, "").toLowerCase();
+      var pages = {
+        "/host": "/Host/",
+        "/gallery": "/Gallery/", "/galleries": "/Gallery/", "/seasons": "/Gallery/", "/seasonal": "/Gallery/", "/holidays": "/Gallery/",
+        "/about": "/About/", "/artist": "/About/", "/meet-the-artist": "/About/",
+        "/contact": "/Contact/", "/quote": "/Contact/", "/order": "/Contact/", "/thank-you": "/Contact/"
+      };
+      var saved = /^\/gallery\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(path);
+      if (pages[path]) location.replace(pages[path] + (path === "/host" ? "" : location.search) + location.hash);
+      else if (saved) location.replace("/Gallery/?g=" + saved[1]);
+    })();
     document.documentElement.classList.add("js");
     setTimeout(function () { if (!window.__htjReady) document.documentElement.classList.remove("js"); }, 2500);
   </script>
@@ -40,14 +51,14 @@
         <svg class="notice__art sketch" viewBox="0 0 180 130" aria-hidden="true">
           <path class="draw" pathLength="1" style="--d:.2s" d="M20 96c18-30 34 8 52-16s30-40 46-12 26 8 42-10"/>
           <path class="draw faint" pathLength="1" style="--d:.6s" d="M28 112c40-6 84-6 124 0"/>
-          <circle class="gold" cx="150" cy="40" r="9"/>
+          <circle class="accent" cx="150" cy="40" r="9"/>
         </svg>
         <p class="eyebrow eyebrow--center">Error 404</p>
         <h1>A page <em>off the sketchbook</em></h1>
         <p>The page you were looking for has wandered off. Let&rsquo;s get you back to familiar lines.</p>
         <div class="notice__actions">
           <a class="btn" href="/">Return Home</a>
-          <a class="btn btn--ghost" href="/order.html">Commission a Sketch</a>
+          <a class="btn btn--ghost" href="/Gallery/">View the Gallery</a>
         </div>
       </div>
     </section>

@@ -7,8 +7,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://whueerfuwpdmnfbnsrpe.supabase.co; connect-src 'self' https://whueerfuwpdmnfbnsrpe.supabase.co wss://whueerfuwpdmnfbnsrpe.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="referrer" content="same-origin">
   <title>Host · Homer T. Jones</title>
-  <meta name="description" content="Private studio for managing the Homer T. Jones gallery and homepage.">
-  <meta name="theme-color" content="#f6f1e7">
+  <meta name="description" content="Private studio for managing the Homer T. Jones gallery and website text.">
+  <meta name="theme-color" content="#f5ede0">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +47,7 @@
       <section class="host-auth" data-view="signin" aria-labelledby="signin-title" hidden>
         <p class="eyebrow">Host</p>
         <h1 id="signin-title">Welcome back</h1>
-        <p class="host-auth__lede">Sign in to manage your gallery and the words on your homepage.</p>
+        <p class="host-auth__lede">Sign in to manage your gallery and the words on your website.</p>
         <form class="host-form" data-signin-form novalidate>
           <div class="field">
             <label class="label" for="signin-email">Email</label>
@@ -91,16 +91,17 @@
 
       <section class="host-dashboard" data-view="dashboard" hidden>
         <div class="host-tabs" role="tablist" aria-label="Studio sections">
-          <button class="host-tab" type="button" role="tab" id="tab-gallery" aria-controls="panel-gallery" aria-selected="true" data-tab="gallery">Gallery</button>
-          <button class="host-tab" type="button" role="tab" id="tab-content" aria-controls="panel-content" aria-selected="false" tabindex="-1" data-tab="content">Main page</button>
+          <button class="host-tab" type="button" role="tab" id="tab-gallery" aria-controls="panel-gallery" aria-selected="true" data-tab="gallery">Pictures</button>
+          <button class="host-tab" type="button" role="tab" id="tab-collections" aria-controls="panel-collections" aria-selected="false" tabindex="-1" data-tab="collections">Saved galleries</button>
+          <button class="host-tab" type="button" role="tab" id="tab-content" aria-controls="panel-content" aria-selected="false" tabindex="-1" data-tab="content">Page text</button>
           <button class="host-tab" type="button" role="tab" id="tab-account" aria-controls="panel-account" aria-selected="false" tabindex="-1" data-tab="account">Account</button>
         </div>
 
         <div class="host-panel" role="tabpanel" id="panel-gallery" aria-labelledby="tab-gallery" data-panel="gallery">
           <div class="host-panel__head">
             <div>
-              <h1>Gallery</h1>
-              <p class="host-panel__lede">Drag the pictures, or use the arrows, to set their order. The order here is the order on the homepage.</p>
+              <h1>Pictures</h1>
+              <p class="host-panel__lede">Drag the pictures, or use the arrows, to set their order. The order here is the order on the Gallery page and in every saved gallery.</p>
             </div>
             <div class="host-panel__actions">
               <p class="host-count" data-gallery-count></p>
@@ -112,7 +113,7 @@
             <svg class="dropzone__icon" aria-hidden="true"><use href="/assets/img/icons.svg#photo"></use></svg>
             <div>
               <span class="dropzone__title">Add photos: choose them or drop them here</span>
-              <span class="dropzone__meta" id="upload-hint">JPG, PNG, WebP, or HEIC. Choose several at once. New photos go to the front.</span>
+              <span class="dropzone__meta" id="upload-hint">JPG, PNG, WebP, or HEIC. Choose several at once. New photos go to the front. The website copy is marked &ldquo;&copy; Homer T. Jones&rdquo;; your downloads stay unmarked.</span>
             </div>
             <input type="file" accept="image/*,.heic,.heif" multiple aria-label="Add photos to the gallery" aria-describedby="upload-hint" data-upload-input>
           </div>
@@ -121,24 +122,45 @@
 
           <div class="host-empty" data-gallery-empty hidden>
             <p class="host-empty__title">Your gallery is empty</p>
-            <p>The Gallery section appears on the homepage as soon as you add your first photo.</p>
+            <p>The Gallery page shows your pictures as soon as you add the first one.</p>
           </div>
 
           <ol class="host-grid" data-gallery-grid aria-label="Gallery images in display order"></ol>
           <p class="host-order-status" role="status" data-order-status></p>
         </div>
 
+        <div class="host-panel" role="tabpanel" id="panel-collections" aria-labelledby="tab-collections" data-panel="collections" hidden>
+          <div class="host-panel__head">
+            <div>
+              <h1>Saved galleries</h1>
+              <p class="host-panel__lede">Seasonal and holiday collections. Each one gets its own page and a button at the top of the Gallery as soon as it has a picture. Use the arrows to set the order of the buttons.</p>
+            </div>
+            <div class="host-panel__actions">
+              <button class="btn btn--small" type="button" data-collection-new>New saved gallery</button>
+            </div>
+          </div>
+
+          <div class="host-empty" data-collections-empty hidden>
+            <p class="host-empty__title">No saved galleries yet</p>
+            <p>Make one for a season or holiday, then choose the pictures that belong in it.</p>
+          </div>
+
+          <ol class="host-collections" data-collection-list aria-label="Saved galleries in display order"></ol>
+          <p class="host-order-status" role="status" data-collection-status></p>
+        </div>
+
         <div class="host-panel" role="tabpanel" id="panel-content" aria-labelledby="tab-content" data-panel="content" hidden>
           <div class="host-panel__head">
             <div>
-              <h1>Main page</h1>
-              <p class="host-panel__lede">Change any words on the homepage. Put <code>*asterisks*</code> around words to show them in gold italics, and press Enter for a new line. Empty a box to hide that line.</p>
+              <h1>Page text</h1>
+              <p class="host-panel__lede">Change any words on the website. Choose a page, then edit its boxes. Put <code>*asterisks*</code> around words to show them in terracotta italics, and press Enter for a new line. Empty a box to hide that line.</p>
             </div>
             <div class="host-panel__actions">
-              <a class="btn btn--small btn--ghost" href="/" target="_blank" rel="noopener">Open homepage</a>
+              <a class="btn btn--small btn--ghost" href="/" target="_blank" rel="noopener" data-content-open>Open this page</a>
             </div>
           </div>
-          <p class="host-loading host-loading--inline" data-content-loading>Loading your homepage text&hellip;</p>
+          <div class="host-pages" role="group" aria-label="Choose a page to edit" data-content-pages hidden></div>
+          <p class="host-loading host-loading--inline" data-content-loading>Loading your website text&hellip;</p>
           <form class="host-content" data-content-form novalidate></form>
           <div class="host-savebar" data-savebar hidden>
             <p class="host-savebar__status" role="status" data-save-status>You have unsaved changes.</p>
@@ -187,6 +209,7 @@
       <div class="host-item__body">
         <p class="host-item__title" data-item-title></p>
         <p class="host-item__meta" data-item-meta></p>
+        <p class="host-item__tags" data-item-tags hidden></p>
       </div>
       <div class="host-item__actions">
         <div class="host-item__group">
@@ -226,6 +249,110 @@
         <label class="label" for="edit-image-caption">Caption <span class="opt">optional</span></label>
         <textarea class="control" id="edit-image-caption" name="caption" maxlength="1000" rows="3" placeholder="Shown under the picture when a visitor opens it."></textarea>
       </div>
+      <fieldset class="host-checks" data-edit-collections-wrap hidden>
+        <legend class="label">Saved galleries</legend>
+        <div class="host-checks__list" data-edit-collections></div>
+      </fieldset>
+      <p class="host-error" role="alert" data-form-error></p>
+      <div class="host-dialog__actions">
+        <button class="btn btn--small btn--ghost" type="button" data-dialog-cancel>Cancel</button>
+        <button class="btn btn--small" type="submit" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template data-collection-template>
+    <li class="host-collection">
+      <div class="host-collection__cover" data-collection-cover></div>
+      <div class="host-collection__body">
+        <p class="host-collection__title"><span class="host-swatch" aria-hidden="true"></span><span data-collection-title></span></p>
+        <p class="host-collection__meta" data-collection-meta></p>
+        <p class="host-collection__text" data-collection-text></p>
+        <p class="host-collection__note" data-collection-note hidden></p>
+      </div>
+      <div class="host-collection__actions">
+        <div class="host-item__group">
+          <button class="icon-btn" type="button" data-action="earlier" title="Move up">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>
+            <span class="sr-only">Move up</span>
+          </button>
+          <button class="icon-btn" type="button" data-action="later" title="Move down">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
+            <span class="sr-only">Move down</span>
+          </button>
+        </div>
+        <div class="host-item__group">
+          <button class="text-btn" type="button" data-action="pick">Choose pictures</button>
+          <button class="text-btn" type="button" data-action="edit">Edit</button>
+          <a class="icon-btn" href="/Gallery/" target="_blank" rel="noopener" data-collection-view title="View on the website">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>
+            <span class="sr-only">View on the website</span>
+          </a>
+          <button class="icon-btn icon-btn--danger" type="button" data-action="delete" title="Delete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/></svg>
+            <span class="sr-only">Delete</span>
+          </button>
+        </div>
+      </div>
+    </li>
+  </template>
+
+  <dialog class="host-dialog" data-collection-dialog aria-labelledby="collection-dialog-title">
+    <form class="host-dialog__form" method="dialog" data-collection-form novalidate>
+      <h2 id="collection-dialog-title" data-collection-dialog-title>New saved gallery</h2>
+      <div class="field">
+        <label class="label" for="collection-title">Name</label>
+        <input class="control" id="collection-title" name="title" type="text" maxlength="80" autocomplete="off" required placeholder="e.g. Christmas &amp; Winter">
+      </div>
+      <div class="field">
+        <label class="label" for="collection-description">Short description <span class="opt">optional</span></label>
+        <textarea class="control" id="collection-description" name="description" maxlength="600" rows="3" placeholder="Shown at the top of this gallery&rsquo;s page." aria-describedby="collection-description-hint"></textarea>
+        <p class="hint" id="collection-description-hint">Put *asterisks* around words to show them in italics.</p>
+      </div>
+      <fieldset class="host-themes">
+        <legend class="label">Colour</legend>
+        <div class="host-themes__list">
+          <label class="host-theme" data-theme="clay"><input type="radio" name="theme" value="clay" checked><span class="host-swatch" aria-hidden="true"></span>Terracotta</label>
+          <label class="host-theme" data-theme="sage"><input type="radio" name="theme" value="sage"><span class="host-swatch" aria-hidden="true"></span>Sage</label>
+          <label class="host-theme" data-theme="harvest"><input type="radio" name="theme" value="harvest"><span class="host-swatch" aria-hidden="true"></span>Harvest</label>
+          <label class="host-theme" data-theme="cranberry"><input type="radio" name="theme" value="cranberry"><span class="host-swatch" aria-hidden="true"></span>Cranberry</label>
+          <label class="host-theme" data-theme="pine"><input type="radio" name="theme" value="pine"><span class="host-swatch" aria-hidden="true"></span>Pine</label>
+          <label class="host-theme" data-theme="blush"><input type="radio" name="theme" value="blush"><span class="host-swatch" aria-hidden="true"></span>Rose</label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label class="label" for="collection-slug">Web address</label>
+        <div class="host-slug">
+          <span class="host-slug__prefix" aria-hidden="true">/Gallery/?g=</span>
+          <input class="control" id="collection-slug" name="slug" type="text" maxlength="60" autocomplete="off" spellcheck="false" required aria-describedby="collection-slug-hint">
+        </div>
+        <p class="hint" id="collection-slug-hint">Lowercase letters, numbers, and dashes. Filled in from the name.</p>
+      </div>
+      <label class="host-toggle">
+        <input type="checkbox" name="is_visible" checked>
+        <span>Show on the website</span>
+      </label>
+      <p class="host-error" role="alert" data-form-error></p>
+      <div class="host-dialog__actions">
+        <button class="btn btn--small btn--ghost" type="button" data-dialog-cancel>Cancel</button>
+        <button class="btn btn--small" type="submit" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="host-dialog host-dialog--wide" data-picker-dialog aria-labelledby="picker-title">
+    <form class="host-dialog__form" method="dialog" data-picker-form>
+      <h2 id="picker-title">Choose pictures</h2>
+      <p class="host-dialog__lede">Tick the pictures that belong in <strong data-picker-name></strong>. They keep the same order as on the Pictures tab.</p>
+      <div class="host-picker__tools" data-picker-tools>
+        <p class="host-picker__count" role="status" data-picker-count></p>
+        <div class="host-item__group">
+          <button class="text-btn" type="button" data-picker-all>Select all</button>
+          <button class="text-btn" type="button" data-picker-none>Clear</button>
+        </div>
+      </div>
+      <ul class="host-picker" data-picker-list></ul>
+      <p class="host-picker__empty" data-picker-empty hidden>Add pictures on the Pictures tab first, then come back to choose them.</p>
       <p class="host-error" role="alert" data-form-error></p>
       <div class="host-dialog__actions">
         <button class="btn btn--small btn--ghost" type="button" data-dialog-cancel>Cancel</button>

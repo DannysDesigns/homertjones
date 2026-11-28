@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Gallery · Homer T. Jones</title>
+  <meta name="description" content="A gallery of hand-drawn sketches on postcards, plates, and keepsakes, including seasonal and holiday collections.">
+  <link rel="canonical" href="https://homertjones.com/Gallery/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Homer T. Jones">
+  <meta property="og:title" content="The Gallery · Homer T. Jones">
+  <meta property="og:description" content="A gallery of hand-drawn sketches on postcards, plates, and keepsakes, including seasonal and holiday collections.">
+  <meta property="og:url" content="https://homertjones.com/Gallery/">
+  <meta name="theme-color" content="#f5ede0">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Jost:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script>
+    document.documentElement.classList.add("js", "content-loading");
+    setTimeout(function () { document.documentElement.classList.remove("content-loading"); }, 1500);
+    setTimeout(function () { if (!window.__htjReady) document.documentElement.classList.remove("js"); }, 2500);
+  </script>
+  <script src="/assets/js/site-config.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" data-header>
+    <div class="container site-header__inner">
+      <a class="brand" href="/" aria-label="Homer T. Jones, home">
+        <svg class="brand__mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22.5"/><circle cx="24" cy="24" r="19.5"/><text x="24" y="29" text-anchor="middle">HTJ</text></svg>
+          <span class="brand__text">
+            <span class="brand__name">Homer T. Jones</span>
+            <span class="brand__tag">Hand-Sketched Keepsakes</span>
+          </span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+        <span class="sr-only">Menu</span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="Primary" data-nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/Gallery/" aria-current="page">Gallery</a></li>
+          <li><a href="/About/">Meet the Artist</a></li>
+        </ul>
+        <a class="btn btn--small btn--accent" href="/Contact/">Request a Quote</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero" aria-labelledby="gallery-title" data-edit-group="Top of the page">
+      <div class="container" data-reveal>
+        <p class="eyebrow eyebrow--center" data-edit="gallery.eyebrow" data-edit-label="Small heading">The Gallery</p>
+        <h1 id="gallery-title" data-edit="gallery.title" data-edit-label="Headline">Drawn by <em>hand</em></h1>
+        <p data-edit="gallery.intro" data-edit-label="Introduction">A selection of pieces sketched for clients, family, and friends, from front porches to favorite chapels.</p>
+      </div>
+    </section>
+
+    <section class="gallery-page" aria-labelledby="gallery-title" data-gallery>
+      <div class="container">
+        <nav aria-label="Saved galleries" data-gallery-chips hidden>
+          <ul class="chips" data-gallery-chip-list></ul>
+        </nav>
+
+        <div class="collection-head" data-collection-head hidden>
+          <p class="eyebrow eyebrow--center">Seasonal gallery</p>
+          <h2 data-collection-title></h2>
+          <p data-collection-description></p>
+        </div>
+
+        <ul class="gallery-grid" data-gallery-grid data-protect></ul>
+        <div class="gallery__more" data-gallery-more hidden>
+          <button class="btn btn--ghost" type="button" data-gallery-toggle aria-expanded="false">View all</button>
+        </div>
+
+        <div class="gallery-empty" data-gallery-empty data-edit-group="When the gallery is empty" hidden>
+          <svg aria-hidden="true"><use href="/assets/img/icons.svg#frame"></use></svg>
+          <h2 data-edit="gallery.empty.title" data-edit-label="Heading">New pieces are on the way</h2>
+          <p data-edit="gallery.empty.text" data-edit-label="Text">The gallery is being filled with recent work. In the meantime, you&rsquo;re always welcome to ask about a piece of your own.</p>
+          <a class="link-arrow" href="/Contact/">Request a Quote <svg aria-hidden="true"><use href="/assets/img/icons.svg#arrow"></use></svg></a>
+        </div>
+        <noscript><p class="gallery-empty">Please turn on JavaScript to view the gallery.</p></noscript>
+      </div>
+
+      <dialog class="lightbox" data-lightbox aria-label="Gallery image viewer">
+        <div class="lightbox__frame">
+          <button class="lightbox__close" type="button" data-lightbox-close aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+          </button>
+          <button class="lightbox__nav lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8"/></svg>
+          </button>
+          <figure class="lightbox__figure">
+            <div class="lightbox__stage" data-protect><img data-lightbox-img alt="" draggable="false"></div>
+            <figcaption>
+              <span class="lightbox__count" data-lightbox-count></span>
+              <span class="lightbox__title" data-lightbox-title></span>
+              <span class="lightbox__caption" data-lightbox-caption></span>
+              <a class="link-arrow" href="/Contact/" data-lightbox-ask>Ask about a piece like this <svg aria-hidden="true"><use href="/assets/img/icons.svg#arrow"></use></svg></a>
+            </figcaption>
+          </figure>
+          <button class="lightbox__nav lightbox__nav--next" type="button" data-lightbox-next aria-label="Next image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg>
+          </button>
+        </div>
+      </dialog>
+    </section>
+
+    <section class="cta" aria-labelledby="gallery-cta-title" data-edit-group="Closing banner">
+      <div class="container" data-reveal>
+        <p class="eyebrow eyebrow--center" data-edit="gallery.cta.eyebrow" data-edit-label="Small heading">Made to order</p>
+        <h2 id="gallery-cta-title" data-edit="gallery.cta.title" data-edit-label="Heading">See something you love?</h2>
+        <p data-edit="gallery.cta.text" data-edit-label="Text">Any of these can be drawn from your own photograph. Email for requests and pricing.</p>
+        <a class="btn btn--light" href="/Contact/">Request a Quote <svg aria-hidden="true"><use href="/assets/img/icons.svg#arrow"></use></svg></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" data-edit-group="Footer (every page)">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a class="brand" href="/" aria-label="Homer T. Jones, home">
+            <svg class="brand__mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22.5"/><circle cx="24" cy="24" r="19.5"/><text x="24" y="29" text-anchor="middle">HTJ</text></svg>
+            <span class="brand__text">
+              <span class="brand__name">Homer T. Jones</span>
+              <span class="brand__tag">Hand-Sketched Keepsakes</span>
+            </span>
+          </a>
+          <p class="site-footer__about" data-edit="footer.about" data-edit-label="About text">Original hand-drawn sketches on postcards, porcelain plates, and keepsakes, made to order.</p>
+        </div>
+        <div>
+          <h2>Explore</h2>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/Gallery/">The Gallery</a></li>
+            <li><a href="/About/">Meet the Artist</a></li>
+            <li><a href="/About/#process">The Process</a></li>
+            <li><a href="/About/#faq">Questions</a></li>
+          </ul>
+        </div>
+        <div data-footer-galleries hidden>
+          <h2>Seasonal Galleries</h2>
+          <ul data-footer-gallery-list></ul>
+        </div>
+        <div>
+          <h2>Get in Touch</h2>
+          <ul>
+            <li><a href="mailto:homert.jonescards@gmail.com">homert.jonescards@gmail.com</a></li>
+            <li><a href="/Contact/">Request a Quote</a></li>
+            <li><a href="/Contact/#message">Send a Message</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__base">
+        <p>&copy; <span data-year>2026</span> Homer T. Jones. All rights reserved.</p>
+        <p data-edit="footer.tagline" data-edit-label="Bottom line">Every sketch drawn by hand.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

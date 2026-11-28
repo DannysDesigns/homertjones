@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /thank-you.html
 Disallow: /Host/
 
 Sitemap: https://homertjones.com/sitemap.xml

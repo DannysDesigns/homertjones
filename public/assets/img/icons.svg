@@ -83,4 +83,11 @@
   <symbol id="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 12h17M14 6l6 6-6 6"/>
   </symbol>
+  <symbol id="envelope" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 17h46v32H9z"/>
+    <path d="M9 17l23 19 23-19"/>
+    <path d="M9 49l17-16M55 49L38 33" opacity=".6"/>
+    <circle cx="32" cy="38" r="4.5" opacity=".6"/>
+    <path d="M30.5 38h3" opacity=".6"/>
+  </symbol>
 </svg>

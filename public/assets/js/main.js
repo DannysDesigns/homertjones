@@ -3,6 +3,7 @@
 
   window.__htjReady = true;
 
+  const EMAIL = "homert.jonescards@gmail.com";
   const header = document.querySelector("[data-header]");
   const toggle = document.querySelector("[data-nav-toggle]");
   const nav = document.querySelector("[data-nav]");
@@ -56,6 +57,16 @@
     el.textContent = String(new Date().getFullYear());
   });
 
+  // Discourage saving artwork: no right-click menu or dragging on protected images.
+  const blockSave = (event) => {
+    if (event.target instanceof Element && event.target.closest("[data-protect]")) event.preventDefault();
+  };
+  document.addEventListener("contextmenu", blockSave);
+  document.addEventListener("dragstart", blockSave);
+
+  const contactForm = document.querySelector("[data-contact-form]");
+  if (contactForm) initContactForm(contactForm);
+
   initLiveContent();
 
   function initLiveContent() {
@@ -63,10 +74,12 @@
     const config = window.HTJ_CONFIG;
     const editables = document.querySelectorAll("[data-edit]");
     const gallery = document.querySelector("[data-gallery]");
+    const footerGalleries = document.querySelector("[data-footer-galleries]");
     const done = () => root.classList.remove("content-loading");
 
-    if (!config || !window.fetch || (!editables.length && !gallery)) {
+    if (!config || !window.fetch) {
       done();
+      if (gallery) showGalleryEmpty(gallery);
       return;
     }
 
@@ -88,10 +101,31 @@
       done();
     }
 
+    let collections = Promise.resolve([]);
+    if (gallery || footerGalleries) {
+      collections = api(
+        "gallery_collections?select=id,slug,title,description,theme,gallery_collection_images(count)&order=sort_order.asc,created_at.asc"
+      )
+        .then((rows) =>
+          (Array.isArray(rows) ? rows : []).filter((row) => {
+            const embed = row.gallery_collection_images;
+            return Array.isArray(embed) && embed[0] && embed[0].count > 0;
+          })
+        )
+        .catch(() => []);
+    }
+
+    if (footerGalleries) {
+      collections.then((rows) => renderFooterGalleries(footerGalleries, rows));
+    }
+
     if (gallery) {
-      api("gallery_images?select=id,title,caption,image_path,thumb_path,width,height&order=sort_order.asc,created_at.desc")
-        .then((rows) => renderGallery(gallery, rows, config))
-        .catch(() => {});
+      const images = api(
+        "gallery_images?select=id,title,caption,image_path,thumb_path,width,height,gallery_collection_images(collection_id)&order=sort_order.asc,created_at.desc"
+      );
+      Promise.all([images, collections])
+        .then(([rows, saved]) => initGallery(gallery, Array.isArray(rows) ? rows : [], saved, config))
+        .catch(() => showGalleryEmpty(gallery));
     }
   }
 
@@ -119,79 +153,174 @@
     });
   }
 
-  function renderGallery(section, rows, config) {
-    if (!Array.isArray(rows) || !rows.length) return;
+  const galleryHref = (slug) => `/Gallery/?g=${encodeURIComponent(slug)}`;
+
+  function renderFooterGalleries(wrap, rows) {
+    const list = wrap.querySelector("[data-footer-gallery-list]");
+    if (!list || !rows.length) return;
+    list.replaceChildren(
+      ...rows.map((row) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = galleryHref(row.slug);
+        a.textContent = row.title;
+        li.append(a);
+        return li;
+      })
+    );
+    wrap.hidden = false;
+  }
+
+  function showGalleryEmpty(section) {
+    const empty = section.querySelector("[data-gallery-empty]");
+    if (empty) empty.hidden = false;
+  }
+
+  function initGallery(section, images, collections, config) {
+    if (!images.length) {
+      showGalleryEmpty(section);
+      return;
+    }
 
     const INITIAL = 12;
+    const main = document.querySelector("main");
+    const baseTitle = document.title;
     const grid = section.querySelector("[data-gallery-grid]");
     const moreWrap = section.querySelector("[data-gallery-more]");
     const moreBtn = section.querySelector("[data-gallery-toggle]");
+    const chipsNav = section.querySelector("[data-gallery-chips]");
+    const chipList = section.querySelector("[data-gallery-chip-list]");
+    const head = section.querySelector("[data-collection-head]");
+    const headTitle = section.querySelector("[data-collection-title]");
+    const headText = section.querySelector("[data-collection-description]");
     const publicUrl = (path) =>
       `${config.supabaseUrl}/storage/v1/object/public/gallery/${String(path).split("/").map(encodeURIComponent).join("/")}`;
-    const altFor = (item) => item.title || "A hand-drawn commission by Homer T. Jones";
+    const altFor = (item) => item.title || "A hand-drawn sketch by Homer T. Jones";
+    const inCollection = (item, id) =>
+      Array.isArray(item.gallery_collection_images) && item.gallery_collection_images.some((m) => m.collection_id === id);
 
-    const fragment = document.createDocumentFragment();
-    rows.forEach((item, index) => {
+    const saved = collections.filter((c) => images.some((item) => inCollection(item, c.id)));
+    let rows = images;
+
+    const slugFromUrl = () => new URLSearchParams(window.location.search).get("g") || "";
+
+    const chip = (label, href, active, theme) => {
       const li = document.createElement("li");
-      li.className = "gallery-item";
-      li.style.setProperty("--i", String(index % INITIAL));
-      if (index >= INITIAL) li.hidden = true;
-
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "gallery-item__button";
-      button.dataset.index = String(index);
-      button.setAttribute("aria-label", `View ${item.title || "image"} larger`);
-
-      const mat = document.createElement("span");
-      mat.className = "gallery-item__mat";
-      const img = document.createElement("img");
-      img.src = publicUrl(item.thumb_path);
-      img.alt = altFor(item);
-      img.loading = "lazy";
-      img.decoding = "async";
-      if (item.width && item.height) {
-        img.width = item.width;
-        img.height = item.height;
+      const a = document.createElement("a");
+      a.className = "chip";
+      a.href = href;
+      if (active) a.setAttribute("aria-current", "page");
+      if (theme) {
+        a.dataset.theme = theme;
+        const swatch = document.createElement("span");
+        swatch.className = "chip__swatch";
+        swatch.setAttribute("aria-hidden", "true");
+        a.append(swatch);
       }
-      mat.append(img);
-      button.append(mat);
+      a.append(document.createTextNode(label));
+      li.append(a);
+      return li;
+    };
 
-      if (item.title) {
-        const title = document.createElement("span");
-        title.className = "gallery-item__title";
-        title.textContent = item.title;
-        button.append(title);
-      }
+    const renderGrid = () => {
+      const fragment = document.createDocumentFragment();
+      rows.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "gallery-item";
+        li.style.setProperty("--i", String(index % INITIAL));
+        if (index >= INITIAL) li.hidden = true;
 
-      li.append(button);
-      fragment.append(li);
-    });
-    grid.replaceChildren(fragment);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "gallery-item__button";
+        button.dataset.index = String(index);
+        button.setAttribute("aria-label", `View ${item.title || "image"} larger`);
 
-    if (rows.length > INITIAL) {
-      const label = () => {
-        const expanded = moreBtn.getAttribute("aria-expanded") === "true";
-        moreBtn.textContent = expanded ? "Show fewer" : `View all ${rows.length}`;
-      };
-      moreBtn.addEventListener("click", () => {
-        const expand = moreBtn.getAttribute("aria-expanded") !== "true";
-        moreBtn.setAttribute("aria-expanded", String(expand));
-        grid.querySelectorAll(".gallery-item").forEach((li, i) => {
-          if (i >= INITIAL) li.hidden = !expand;
-        });
-        label();
-        if (!expand) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        const mat = document.createElement("span");
+        mat.className = "gallery-item__mat";
+        const img = document.createElement("img");
+        img.src = publicUrl(item.thumb_path);
+        img.alt = altFor(item);
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.draggable = false;
+        if (item.width && item.height) {
+          img.width = item.width;
+          img.height = item.height;
+        }
+        mat.append(img);
+        button.append(mat);
+
+        if (item.title) {
+          const title = document.createElement("span");
+          title.className = "gallery-item__title";
+          title.textContent = item.title;
+          button.append(title);
+        }
+
+        li.append(button);
+        fragment.append(li);
       });
-      label();
-      moreWrap.hidden = false;
-    }
+      grid.replaceChildren(fragment);
 
-    section.hidden = false;
-    document.querySelectorAll("[data-gallery-link]").forEach((el) => {
-      el.hidden = false;
+      moreBtn.setAttribute("aria-expanded", "false");
+      moreBtn.textContent = `View all ${rows.length}`;
+      moreWrap.hidden = rows.length <= INITIAL;
+    };
+
+    moreBtn.addEventListener("click", () => {
+      const expand = moreBtn.getAttribute("aria-expanded") !== "true";
+      moreBtn.setAttribute("aria-expanded", String(expand));
+      grid.querySelectorAll(".gallery-item").forEach((li, i) => {
+        if (i >= INITIAL) li.hidden = !expand;
+      });
+      moreBtn.textContent = expand ? "Show fewer" : `View all ${rows.length}`;
+      if (!expand) grid.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-    if (window.location.hash === "#gallery") section.scrollIntoView();
+
+    const render = () => {
+      let slug = slugFromUrl();
+      let current = saved.find((c) => c.slug === slug) || null;
+      if (slug && !current) {
+        history.replaceState(null, "", "/Gallery/");
+        slug = "";
+      }
+
+      if (saved.length) {
+        chipList.replaceChildren(
+          chip("All work", "/Gallery/", !current),
+          ...saved.map((c) => chip(c.title, galleryHref(c.slug), current === c, c.theme))
+        );
+        chipsNav.hidden = false;
+      }
+
+      if (current) {
+        main.dataset.theme = current.theme;
+        headTitle.textContent = current.title;
+        headText.innerHTML = formatRich(current.description || "");
+        headText.hidden = !current.description;
+        head.hidden = false;
+        document.title = `${current.title} · ${baseTitle}`;
+        rows = images.filter((item) => inCollection(item, current.id));
+      } else {
+        delete main.dataset.theme;
+        head.hidden = true;
+        document.title = baseTitle;
+        rows = images;
+      }
+      renderGrid();
+    };
+
+    chipList.addEventListener("click", (event) => {
+      const link = event.target.closest("a.chip");
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      if (link.getAttribute("aria-current")) return;
+      history.pushState(null, "", link.getAttribute("href"));
+      render();
+    });
+    window.addEventListener("popstate", render);
+    render();
 
     const dialog = section.querySelector("[data-lightbox]");
     if (!dialog || typeof dialog.showModal !== "function") {
@@ -206,6 +335,7 @@
     const count = dialog.querySelector("[data-lightbox-count]");
     const title = dialog.querySelector("[data-lightbox-title]");
     const caption = dialog.querySelector("[data-lightbox-caption]");
+    const ask = dialog.querySelector("[data-lightbox-ask]");
     const prev = dialog.querySelector("[data-lightbox-prev]");
     const next = dialog.querySelector("[data-lightbox-next]");
     let current = 0;
@@ -235,18 +365,33 @@
       title.hidden = !item.title;
       caption.textContent = item.caption || "";
       caption.hidden = !item.caption;
+      if (ask) {
+        const piece = item.title ? `a piece like \u201c${item.title}\u201d from the gallery` : "a piece like one in the gallery";
+        ask.href = `/Contact/?piece=${encodeURIComponent(piece)}`;
+      }
+      prev.hidden = next.hidden = count.hidden = rows.length < 2;
       if (rows.length > 1) {
         preload(current + 1);
         preload(current - 1);
       }
     };
 
-    prev.hidden = next.hidden = count.hidden = rows.length < 2;
     prev.addEventListener("click", () => show(current - 1));
     next.addEventListener("click", () => show(current + 1));
     dialog.querySelector("[data-lightbox-close]").addEventListener("click", () => dialog.close());
     dialog.addEventListener("click", (event) => {
-      if (event.target === dialog || event.target.matches(".lightbox__frame, .lightbox__figure, .lightbox__stage")) dialog.close();
+      const target = event.target;
+      if (target === dialog || target.matches(".lightbox__frame, .lightbox__figure")) {
+        dialog.close();
+        return;
+      }
+      // The image ignores pointer events, so clicks on it land on the stage.
+      if (target.matches(".lightbox__stage")) {
+        const box = big.getBoundingClientRect();
+        const onImage =
+          event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+        if (!onImage) dialog.close();
+      }
     });
     dialog.addEventListener("keydown", (event) => {
       if (event.key === "ArrowLeft") show(current - 1);
@@ -272,111 +417,81 @@
     });
   }
 
-  const form = document.querySelector("[data-order-form]");
-  if (form) initOrderForm(form);
-
-  function initOrderForm(form) {
-    const MAX_BYTES = 10 * 1024 * 1024;
-    const items = form.querySelectorAll('input[name="Item"]');
-
-    const requested = (new URLSearchParams(window.location.search).get("item") || "").toLowerCase();
-    if (requested) {
-      const match = Array.from(items).find((input) => input.dataset.slug === requested);
-      if (match) match.checked = true;
-    }
-
-    const otherWrap = form.querySelector("[data-other-item]");
-    const otherInput = otherWrap && otherWrap.querySelector("input");
-    const syncOther = () => {
-      if (!otherWrap) return;
-      const selected = form.querySelector('input[name="Item"]:checked');
-      const show = Boolean(selected && selected.dataset.slug === "other");
-      otherWrap.hidden = !show;
-      otherInput.required = show;
-      otherInput.disabled = !show;
-    };
-    items.forEach((input) => input.addEventListener("change", syncOther));
-    syncOther();
-
-    const dateInput = form.querySelector('input[type="date"]');
-    if (dateInput) {
-      const today = new Date();
-      today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-      dateInput.min = today.toISOString().slice(0, 10);
-    }
-
-    const next = form.querySelector('input[name="_next"]');
-    if (next && /^https?:$/.test(window.location.protocol)) {
-      next.value = new URL("thank-you.html", window.location.href).href;
-    }
-
-    const fileInput = form.querySelector('input[type="file"]');
-    const dropzone = form.querySelector("[data-dropzone]");
-    const chosen = form.querySelector("[data-file-chosen]");
-    const chosenName = form.querySelector("[data-file-name]");
-    const preview = form.querySelector("[data-file-preview]");
-    const removeBtn = form.querySelector("[data-file-remove]");
-    const fileError = form.querySelector("[data-file-error]");
-    let previewUrl = null;
-
-    const formatSize = (bytes) =>
-      bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-
-    const renderFile = () => {
-      const file = fileInput.files && fileInput.files[0];
-      fileInput.setCustomValidity("");
-      fileError.textContent = "";
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        previewUrl = null;
-      }
-      if (!file) {
-        chosen.hidden = true;
-        return;
-      }
-      if (file.size > MAX_BYTES) {
-        const message = "That file is larger than 10 MB. Please choose a smaller photo.";
-        fileInput.setCustomValidity(message);
-        fileError.textContent = message;
-      }
-      chosenName.textContent = `${file.name} · ${formatSize(file.size)}`;
-      const canPreview = /^image\/(jpeg|png|gif|webp)$/.test(file.type);
-      if (canPreview) {
-        previewUrl = URL.createObjectURL(file);
-        preview.src = previewUrl;
-      }
-      preview.hidden = !canPreview;
-      chosen.hidden = false;
-    };
-
-    if (fileInput && dropzone) {
-      fileInput.addEventListener("change", renderFile);
-      ["dragenter", "dragover"].forEach((type) =>
-        dropzone.addEventListener(type, () => dropzone.classList.add("is-dragging"))
-      );
-      ["dragleave", "drop"].forEach((type) =>
-        dropzone.addEventListener(type, () => dropzone.classList.remove("is-dragging"))
-      );
-      removeBtn.addEventListener("click", () => {
-        fileInput.value = "";
-        renderFile();
-        fileInput.focus();
-      });
-      renderFile();
-    }
-
+  function initContactForm(form) {
+    const body = document.querySelector("[data-contact-body]");
+    const sent = document.querySelector("[data-form-sent]");
+    const again = document.querySelector("[data-form-again]");
+    const status = form.querySelector("[data-form-status]");
     const submit = form.querySelector('[type="submit"]');
-    const submitLabel = submit.querySelector("[data-label]");
-    const defaultLabel = submitLabel.textContent;
+    const label = submit.querySelector("[data-label]");
+    const defaultLabel = label.textContent;
+    const message = form.elements.namedItem("message");
 
-    form.addEventListener("submit", () => {
+    const piece = (new URLSearchParams(window.location.search).get("piece") || "").trim().slice(0, 160);
+    if (piece && message && !message.value) {
+      message.value = `Hello! I\u2019d love to ask about ${piece}.\n\n`;
+    }
+
+    const showError = (detail) => {
+      const link = document.createElement("a");
+      link.href = `mailto:${EMAIL}`;
+      link.textContent = EMAIL;
+      status.replaceChildren(
+        `Sorry, your message couldn\u2019t be sent${detail ? ` (${detail})` : ""}. Please try again, or email `,
+        link,
+        " directly."
+      );
+      status.classList.add("form-status--error");
+      status.hidden = false;
+    };
+
+    if (!window.fetch || !window.FormData || !body || !sent) return;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
       submit.disabled = true;
-      submitLabel.textContent = "Sending your request…";
+      label.textContent = "Sending\u2026";
+      status.hidden = true;
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { Accept: "application/json" },
+        });
+        if (response.ok) {
+          form.reset();
+          body.hidden = true;
+          sent.hidden = false;
+          sent.focus();
+          return;
+        }
+        let detail = "";
+        try {
+          const data = await response.json();
+          detail = (Array.isArray(data.errors) ? data.errors : [])
+            .map((error) => error && error.message)
+            .filter(Boolean)
+            .join(" ");
+        } catch {
+          detail = "";
+        }
+        showError(detail);
+      } catch {
+        showError("");
+      } finally {
+        submit.disabled = false;
+        label.textContent = defaultLabel;
+      }
     });
 
-    window.addEventListener("pageshow", () => {
-      submit.disabled = false;
-      submitLabel.textContent = defaultLabel;
-    });
+    if (again) {
+      again.addEventListener("click", () => {
+        sent.hidden = true;
+        body.hidden = false;
+        status.hidden = true;
+        const name = form.elements.namedItem("name");
+        if (name) name.focus();
+      });
+    }
   }
 })();
